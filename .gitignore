@@ -1,0 +1,29 @@
+# Build output
+build/
+out/
+
+# Secrets: never commit these
+*.pem
+*.key
+*.crt
+certs/
+.env
+*.secret
+
+# Models and test media (large)
+models/*.onnx
+eval/clips/
+
+# Python
+__pycache__/
+.venv/
+*.pyc
+
+# Node
+node_modules/
+cdk.out/
+dist/
+
+# Editors
+.vscode/
+.idea/
