@@ -26,10 +26,24 @@ Design: https://claude.ai/artifact/JPmYmWXydyyioKvHsSLYMX
 - Python 3 for the gateway and eval scripts
 - Node.js for the dashboard and CDK
 
+## Build and run the firmware
+
+From `firmware/` in PowerShell:
+
+```powershell
+.\build.ps1 -Run                       # synthetic scene; press m for motion, q to quit
+.\build.ps1 -Run -- ..\eval\clips\door.mp4
+.\build.ps1 -Run -- --run-seconds 11 --auto-motion 60   # unattended test run
+```
+
+Other options: `--cost-ms M` (simulated per-frame processing cost, default 20),
+`--udp-port P` (MOTION datagrams from the gateway, default 5055).
+Build output goes to `%LOCALAPPDATA%\edgevision\build`, outside OneDrive.
+
 ## Status
 
 - [ ] Day 0: toolchain, Ring Playground findings (`docs/ring-notes.md`), AWS account
-- [ ] Day 1: FreeRTOS sim build, HAL, frame pool, first task → queue → task
+- [x] Day 1: FreeRTOS sim build, HAL, frame pool, first task → queue → task
 - [ ] Day 2: ISP, motion gate, simulated NPU inference, decision, governor
 - [ ] Day 3: Ring gateway, coreMQTT → AWS IoT Core → DynamoDB, offline queue
 - [ ] Day 4: watchdog, fault injection, dashboard
