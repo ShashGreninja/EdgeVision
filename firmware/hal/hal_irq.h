@@ -7,6 +7,7 @@
  * (yield and tick); the rest are ours, up to 31. */
 #define IRQ_MOTION      ( 2UL ) /* GPIO: motion pin raised (Ring event / PIR). */
 #define IRQ_DMA_DONE    ( 3UL ) /* Camera DMA: frame transfer complete.        */
+#define IRQ_NPU_DONE    ( 4UL ) /* Neural accelerator: inference job finished. */
 
 #ifdef __cplusplus
 extern "C" {

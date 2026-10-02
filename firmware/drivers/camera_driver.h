@@ -29,6 +29,10 @@ QueueHandle_t camera_driver_init( void );
 
 void camera_get_stats( camera_stats_t * out );
 
+/* Called by the pipeline while something is confirmed in view: keeps the
+ * camera streaming as if the motion pin had fired again. */
+void camera_note_activity( void );
+
 int camera_is_streaming( void );
 
 #endif /* CAMERA_DRIVER_H */

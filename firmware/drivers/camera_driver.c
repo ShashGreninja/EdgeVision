@@ -7,6 +7,7 @@
 #include "drivers/frame_pool.h"
 #include "hal/hal_irq.h"
 #include "hal/hal_sensor.h"
+#include "services/governor.h"
 
 #define EV_MOTION           ( 1UL << 0 )
 #define EV_DMA_DONE         ( 1UL << 1 )
@@ -21,6 +22,7 @@ static TaskHandle_t s_task;
 static QueueHandle_t s_frame_queue;
 static volatile camera_stats_t s_stats;
 static volatile int s_streaming;
+static int s_next_is_wake; /* The next captured frame is the first after wake-up. */
 
 /*-------------------------- Interrupt handlers ---------------------------*/
 
@@ -116,12 +118,24 @@ static void prvCaptureOne( TickType_t * last_motion )
 
     fb->seq = hal_sensor_last_seq();
     fb->captured_at = xTaskGetTickCount();
+    fb->wake = ( uint8_t ) s_next_is_wake;
     frame_pool_move( idx, BUF_FILLING, BUF_READY );
     s_stats.frames_captured++;
+
+    /* The first frame after wake-up is always checked; after that the
+     * governor decides whether the budget allows this frame. */
+    if( !governor_admit( fb->wake, &fb->gov_reserved_us ) )
+    {
+        frame_pool_move( idx, BUF_READY, BUF_FREE );
+        return;
+    }
+
+    s_next_is_wake = 0;
 
     if( xQueueSend( s_frame_queue, &idx, 0 ) != pdPASS )
     {
         s_stats.queue_drops++;
+        governor_complete( fb->gov_reserved_us, GOV_FRAME_BASE_US, GOV_DROPPED );
         frame_pool_move( idx, BUF_READY, BUF_FREE );
     }
 }
@@ -147,6 +161,7 @@ static void prvCameraTask( void * param )
         last_motion = xTaskGetTickCount();
         s_stats.wakeups++;
         s_streaming = 1;
+        s_next_is_wake = 1;
         hal_sensor_set_power( 1 );
         LOG( "[camera] motion -> sensor on, streaming" );
 
@@ -158,7 +173,7 @@ static void prvCameraTask( void * param )
         hal_sensor_set_power( 0 );
         ( void ) hal_sensor_dma_abort();
         s_streaming = 0;
-        LOG( "[camera] no motion for %d s -> sensor off, idle", QUIET_TIMEOUT_MS / 1000 );
+        LOG( "[camera] no activity for %d s -> sensor off, idle", QUIET_TIMEOUT_MS / 1000 );
     }
 }
 
@@ -178,6 +193,14 @@ QueueHandle_t camera_driver_init( void )
     vPortSetInterruptHandler( IRQ_MOTION, prvMotionIsr );
     vPortSetInterruptHandler( IRQ_DMA_DONE, prvDmaDoneIsr );
     return s_frame_queue;
+}
+
+void camera_note_activity( void )
+{
+    if( s_task != NULL )
+    {
+        xTaskNotify( s_task, EV_MOTION, eSetBits );
+    }
 }
 
 void camera_get_stats( camera_stats_t * out )

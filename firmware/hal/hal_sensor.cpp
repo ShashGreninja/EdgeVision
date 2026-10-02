@@ -1,19 +1,33 @@
 #include "hal/hal_sensor.h"
 #include "hal/hal_irq.h"
+#include "hal/hal_video_mem.hpp"
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstdio>
 #include <cstring>
+#include <mutex>
 #include <string>
 #include <thread>
 
 namespace
 {
+/* Colour ring in video memory, written by the ISP, read by the NPU. */
+struct VideoSlot
+{
+    uint32_t seq = 0;
+    /* Parentheses, not braces: cv::Mat{ a, b, c } is a 3-element list. */
+    cv::Mat bgr = cv::Mat( VIDEO_MEM_H, VIDEO_MEM_W, CV_8UC3 );
+};
+
+std::mutex g_video_mu;
+VideoSlot g_video[ VIDEO_MEM_FRAMES ];
+
 std::atomic<uint8_t *> g_dma_dst { nullptr };
 std::atomic<int> g_powered { 0 };
 std::atomic<uint32_t> g_last_seq { 0 };
@@ -21,6 +35,21 @@ std::atomic<uint32_t> g_produced { 0 };
 std::atomic<uint32_t> g_transferred { 0 };
 std::atomic<uint32_t> g_overruns { 0 };
 std::string g_clip;
+
+/* Fit a clip frame of any shape into the sensor's 16:9 frame without
+ * distorting it (black bars at the sides or top/bottom). */
+void fit_to_sensor( const cv::Mat & src, cv::Mat & native )
+{
+    const double scale = std::min( SENSOR_NATIVE_W / static_cast<double>( src.cols ),
+                                   SENSOR_NATIVE_H / static_cast<double>( src.rows ) );
+    const int w = std::max( 1, static_cast<int>( src.cols * scale ) );
+    const int h = std::max( 1, static_cast<int>( src.rows * scale ) );
+    cv::Mat sized;
+
+    cv::resize( src, sized, cv::Size( w, h ), 0, 0, cv::INTER_AREA );
+    native.setTo( cv::Scalar( 0, 0, 0 ) );
+    sized.copyTo( native( cv::Rect( ( SENSOR_NATIVE_W - w ) / 2, ( SENSOR_NATIVE_H - h ) / 2, w, h ) ) );
+}
 
 /* Synthetic scene: a bright block walks across a dim background. */
 void synth_frame( cv::Mat & bgr, uint32_t seq )
@@ -36,6 +65,7 @@ void synth_frame( cv::Mat & bgr, uint32_t seq )
 void sensor_thread()
 {
     cv::VideoCapture cap;
+    cv::Mat clip_frame;
     cv::Mat native( SENSOR_NATIVE_H, SENSOR_NATIVE_W, CV_8UC3 );
     cv::Mat gray;
     cv::Mat out;
@@ -72,15 +102,17 @@ void sensor_thread()
         /* Capture at native resolution. */
         if( cap.isOpened() )
         {
-            if( !cap.read( native ) || native.empty() )
+            if( !cap.read( clip_frame ) || clip_frame.empty() )
             {
                 cap.set( cv::CAP_PROP_POS_FRAMES, 0 ); /* Loop the clip. */
 
-                if( !cap.read( native ) || native.empty() )
+                if( !cap.read( clip_frame ) || clip_frame.empty() )
                 {
                     continue;
                 }
             }
+
+            fit_to_sensor( clip_frame, native );
         }
         else
         {
@@ -90,8 +122,17 @@ void sensor_thread()
         ++seq;
         ++g_produced;
 
-        /* On-module ISP: grayscale + downscale, so a full 1080p frame never
-         * reaches firmware RAM. */
+        /* ISP output 1: small colour copy into video memory, for the NPU. */
+        {
+            std::lock_guard<std::mutex> lock( g_video_mu );
+            VideoSlot & slot = g_video[ seq % VIDEO_MEM_FRAMES ];
+
+            cv::resize( native, slot.bgr, slot.bgr.size(), 0, 0, cv::INTER_AREA );
+            slot.seq = seq;
+        }
+
+        /* ISP output 2: grayscale QVGA for the firmware, so a full 1080p
+         * frame never reaches firmware RAM. */
         cv::cvtColor( native, gray, cv::COLOR_BGR2GRAY );
         cv::resize( gray, out, cv::Size( FRAME_W, FRAME_H ), 0, 0, cv::INTER_AREA );
 
@@ -111,6 +152,20 @@ void sensor_thread()
     }
 }
 } // namespace
+
+bool hal_video_mem_get( uint32_t seq, cv::Mat & out )
+{
+    std::lock_guard<std::mutex> lock( g_video_mu );
+    const VideoSlot & slot = g_video[ seq % VIDEO_MEM_FRAMES ];
+
+    if( ( seq == 0 ) || ( slot.seq != seq ) )
+    {
+        return false;
+    }
+
+    slot.bgr.copyTo( out );
+    return true;
+}
 
 extern "C" int hal_sensor_init( const char * clip_path )
 {

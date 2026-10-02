@@ -34,6 +34,8 @@ typedef struct
     buf_state_t state;
     uint32_t seq;           /* Sensor sequence number of the frame. */
     TickType_t captured_at; /* Tick when DMA completed. */
+    uint8_t wake;           /* First frame after the camera woke up. */
+    uint32_t gov_reserved_us; /* Budget the governor reserved for this frame. */
 } frame_buf_t;
 
 /* Allocate all slots. Returns 0 on success. */
