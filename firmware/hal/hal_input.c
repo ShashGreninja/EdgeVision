@@ -74,9 +74,17 @@ static DWORD WINAPI prvUdpThread( LPVOID param )
     {
         const int n = recvfrom( sock, buf, ( int ) sizeof( buf ) - 1, 0, NULL, NULL );
 
-        if( ( n >= 6 ) && ( strncmp( buf, "MOTION", 6 ) == 0 ) )
+        if( n <= 0 )
         {
-            prvRaiseMotion( "udp" );
+            continue;
+        }
+
+        buf[ n ] = '\0';
+
+        if( strncmp( buf, "MOTION", 6 ) == 0 )
+        {
+            /* "MOTION ring human <device>" from the gateway, or plain "MOTION". */
+            prvRaiseMotion( ( n > 7 ) ? buf + 7 : "udp" );
         }
     }
 }
