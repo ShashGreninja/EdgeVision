@@ -1,0 +1,11 @@
+{
+  "note": "Ground truth for eval/run_eval.py. Times are clip seconds. Clips are not committed (eval/clips/ is in .gitignore).",
+  "clips": {
+    "testclip.mp4": {
+      "description": "Handheld portrait video, 2160x4096. A man climbs the stairs to a door, knocks, waits, goes inside; the door closes at the end.",
+      "fps": 25,
+      "frames": 841,
+      "person": [[0.0, 30.2]]
+    }
+  }
+}
