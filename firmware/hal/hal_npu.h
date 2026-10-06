@@ -61,6 +61,10 @@ int hal_npu_submit( uint32_t seq, const hal_roi_t * roi );
 /* Read the result of the last job (valid after IRQ_NPU_DONE). */
 void hal_npu_get_result( npu_result_t * out );
 
+/* Reset the NPU: abandon the current job (no IRQ will follow) and accept
+ * new jobs again. */
+void hal_npu_reset( void );
+
 #ifdef __cplusplus
 }
 #endif

@@ -107,7 +107,7 @@ static void prvTelemetryTask( void * param )
         if( ( s_run_seconds > 0 ) && ( seconds >= s_run_seconds ) )
         {
             LOG( "[done] %lu s: wakeups %lu | sensor %lu frames, overruns %lu | captured %lu, governor admitted %lu dropped %lu | "
-                 "motion gated %lu forwarded %lu busy %lu | npu jobs %lu timeouts %lu gone %lu (host %lu ms/job) | "
+                 "motion gated %lu forwarded %lu busy %lu | npu jobs %lu rejected %lu gone %lu (host %lu ms/job) | watchdog restarts %lu | "
                  "events %lu (person %lu, vehicle %lu, animal %lu) | heap peak %lu KB, late allocs %lu",
                  ( unsigned long ) seconds,
                  ( unsigned long ) cam.wakeups,
@@ -120,9 +120,10 @@ static void prvTelemetryTask( void * param )
                  ( unsigned long ) mot.forwarded,
                  ( unsigned long ) mot.infer_busy,
                  ( unsigned long ) inf.jobs,
-                 ( unsigned long ) inf.timeouts,
+                 ( unsigned long ) inf.rejected,
                  ( unsigned long ) inf.frame_gone,
                  ( unsigned long ) ( inf.last_host_us / 1000 ),
+                 ( unsigned long ) inf.restarts,
                  ( unsigned long ) dec.events,
                  ( unsigned long ) dec.events_by[ CAT_PERSON ],
                  ( unsigned long ) dec.events_by[ CAT_VEHICLE ],

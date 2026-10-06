@@ -9,6 +9,7 @@
 #include "hal/hal_time.h"
 #include "pipeline/pipeline_types.h"
 #include "services/governor.h"
+#include "services/watchdog.h"
 
 #define MOTION_STACK_WORDS    ( configMINIMAL_STACK_SIZE * 2 )
 #define GRID_CELLS            ( MOTION_GRID_W * MOTION_GRID_H )
@@ -115,7 +116,13 @@ static void prvMotionTask( void * param )
         uint32_t cells = 0;
         uint8_t * swap;
 
-        xQueueReceive( s_frames, &idx, portMAX_DELAY );
+        watchdog_kick( WD_MOTION );
+
+        if( xQueueReceive( s_frames, &idx, pdMS_TO_TICKS( 500 ) ) != pdPASS )
+        {
+            continue;
+        }
+
         frame_pool_move( idx, BUF_READY, BUF_PROCESSING );
 
         frame_buf_t * fb = frame_pool_get( idx );
@@ -211,6 +218,7 @@ int motion_init( QueueHandle_t frame_queue, QueueHandle_t infer_queue, uint32_t 
     }
 
     memset( s_prev, 0, GRID_CELLS );
+    watchdog_register( WD_MOTION, "MotionTask", 2000, NULL );
     return ( xTaskCreate( prvMotionTask, "Motion", MOTION_STACK_WORDS, NULL, PRIO_MOTION, NULL ) == pdPASS ) ? 0 : -1;
 }
 

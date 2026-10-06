@@ -12,6 +12,7 @@
 #include "common/log.h"
 #include "hal/hal_irq.h"
 #include "hal/hal_link.h"
+#include "services/watchdog.h"
 
 #define NETWORK_STACK_WORDS    ( configMINIMAL_STACK_SIZE * 2 )
 #define EVENT_QUEUE_LEN        4
@@ -202,6 +203,8 @@ static void prvNetworkTask( void * param )
     {
         event_t ev;
 
+        watchdog_kick( WD_NETWORK );
+
         /* Wake for new events, link interrupts, or at least every 100 ms. */
         if( xQueueReceive( s_events, &ev, pdMS_TO_TICKS( 100 ) ) == pdPASS )
         {
@@ -242,6 +245,7 @@ int network_init( const char * device_id, int link_port )
 
     vQueueAddToRegistry( s_events, "EventQ" );
     vPortSetInterruptHandler( IRQ_LINK_RX, prvLinkIsr );
+    watchdog_register( WD_NETWORK, "NetworkTask", 2000, NULL );
 
     if( link_port > 0 )
     {

@@ -42,6 +42,7 @@ add_executable(edgevision
     services/governor.c
     services/network.c
     services/telemetry.c
+    services/watchdog.c
 )
 
 target_include_directories(edgevision PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

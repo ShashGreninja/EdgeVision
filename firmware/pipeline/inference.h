@@ -12,12 +12,11 @@
 
 #include "pipeline/pipeline_types.h"
 
-#define NPU_TIMEOUT_MS    1000
-
 typedef struct
 {
     uint32_t jobs;          /* Jobs completed by the NPU.                    */
-    uint32_t timeouts;      /* NPU did not answer within NPU_TIMEOUT_MS.     */
+    uint32_t rejected;      /* NPU refused a job because it was still busy.  */
+    uint32_t restarts;      /* Watchdog restarts of InferenceTask.           */
     uint32_t frame_gone;    /* Frame overwritten before the NPU got to it.   */
     uint32_t last_device_us; /* Emulated NPU time of the last job.           */
     uint32_t last_host_us;  /* Host time of the last job.                    */

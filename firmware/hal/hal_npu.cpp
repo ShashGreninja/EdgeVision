@@ -41,6 +41,7 @@ std::mutex g_mu;
 std::condition_variable g_cv;
 bool g_busy = false;
 bool g_has_job = false;
+uint32_t g_generation = 0; /* Bumped by every reset; stale jobs are discarded. */
 uint32_t g_job_seq;
 hal_roi_t g_job_roi;
 npu_result_t g_result;
@@ -220,6 +221,7 @@ void npu_thread()
     for( ; ; )
     {
         uint32_t seq;
+        uint32_t generation;
         hal_roi_t roi;
         npu_result_t res;
 
@@ -229,6 +231,7 @@ void npu_thread()
             g_has_job = false;
             seq = g_job_seq;
             roi = g_job_roi;
+            generation = g_generation;
         }
 
         const auto start = std::chrono::steady_clock::now();
@@ -257,6 +260,12 @@ void npu_thread()
 
         {
             std::lock_guard<std::mutex> lock( g_mu );
+
+            if( generation != g_generation )
+            {
+                continue; /* The NPU was reset while this job ran: no result, no IRQ. */
+            }
+
             g_result = res;
             g_busy = false;
         }
@@ -309,4 +318,16 @@ extern "C" void hal_npu_get_result( npu_result_t * out )
 {
     std::lock_guard<std::mutex> lock( g_mu );
     *out = g_result;
+}
+
+extern "C" void hal_npu_reset( void )
+{
+    {
+        std::lock_guard<std::mutex> lock( g_mu );
+        g_generation++;
+        g_busy = false;
+        g_has_job = false;
+    }
+
+    g_cv.notify_all();
 }

@@ -9,6 +9,7 @@
 #include "drivers/camera_driver.h"
 #include "pipeline/motion.h"
 #include "services/network.h"
+#include "services/watchdog.h"
 
 #define DECISION_STACK_WORDS    ( configMINIMAL_STACK_SIZE * 2 )
 
@@ -101,7 +102,13 @@ static void prvDecisionTask( void * param )
     {
         detections_t d;
 
-        xQueueReceive( s_in, &d, portMAX_DELAY );
+        watchdog_kick( WD_DECISION );
+
+        if( xQueueReceive( s_in, &d, pdMS_TO_TICKS( 500 ) ) != pdPASS )
+        {
+            continue;
+        }
+
         s_window[ s_next % DECISION_WINDOW ] = d;
         s_next++;
         s_stats.results++;
@@ -112,6 +119,7 @@ static void prvDecisionTask( void * param )
 int decision_init( QueueHandle_t decision_queue )
 {
     s_in = decision_queue;
+    watchdog_register( WD_DECISION, "DecisionTask", 2000, NULL );
     return ( xTaskCreate( prvDecisionTask, "Decision", DECISION_STACK_WORDS, NULL, PRIO_DECISION, NULL ) == pdPASS ) ? 0 : -1;
 }
 

@@ -36,6 +36,7 @@
 #include "services/governor.h"
 #include "services/network.h"
 #include "services/telemetry.h"
+#include "services/watchdog.h"
 
 #define MODEL_FP32    "object_detection_nanodet_2022nov.onnx"
 #define MODEL_INT8    "object_detection_nanodet_2022nov_int8.onnx"
@@ -203,6 +204,7 @@ int main( int argc, char ** argv )
         ( inference_init( infer_queue, decision_queue ) != 0 ) ||
         ( decision_init( decision_queue ) != 0 ) ||
         ( network_init( device_id, link_port ) != 0 ) ||
+        ( watchdog_init() != 0 ) ||
         ( telemetry_init( run_seconds ) != 0 ) )
     {
         prvFatal( "could not create tasks" );

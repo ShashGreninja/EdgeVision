@@ -8,6 +8,7 @@
 #include "hal/hal_irq.h"
 #include "hal/hal_sensor.h"
 #include "services/governor.h"
+#include "services/watchdog.h"
 
 #define EV_MOTION           ( 1UL << 0 )
 #define EV_DMA_DONE         ( 1UL << 1 )
@@ -149,11 +150,12 @@ static void prvCameraTask( void * param )
         uint32_t bits = 0;
         TickType_t last_motion;
 
-        /* Idle: sensor off, sleep until the motion pin fires. Stale DMA
-         * events from the previous session are discarded here. */
-        xTaskNotifyWait( 0, UINT32_MAX, &bits, portMAX_DELAY );
+        /* Idle: sensor off, sleep until the motion pin fires (waking every
+         * 500 ms to kick the watchdog). Stale DMA events from the previous
+         * session are discarded here. */
+        watchdog_kick( WD_CAMERA );
 
-        if( !( bits & EV_MOTION ) )
+        if( ( xTaskNotifyWait( 0, UINT32_MAX, &bits, pdMS_TO_TICKS( 500 ) ) == pdFALSE ) || !( bits & EV_MOTION ) )
         {
             continue;
         }
@@ -167,6 +169,7 @@ static void prvCameraTask( void * param )
 
         while( ( xTaskGetTickCount() - last_motion ) < pdMS_TO_TICKS( QUIET_TIMEOUT_MS ) )
         {
+            watchdog_kick( WD_CAMERA );
             prvCaptureOne( &last_motion );
         }
 
@@ -192,6 +195,7 @@ QueueHandle_t camera_driver_init( void )
     vQueueAddToRegistry( s_frame_queue, "FrameQ" );
     vPortSetInterruptHandler( IRQ_MOTION, prvMotionIsr );
     vPortSetInterruptHandler( IRQ_DMA_DONE, prvDmaDoneIsr );
+    watchdog_register( WD_CAMERA, "CameraTask", 2000, NULL );
     return s_frame_queue;
 }
 
