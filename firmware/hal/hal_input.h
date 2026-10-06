@@ -17,8 +17,9 @@ typedef struct
 
 void hal_input_init( const hal_input_cfg_t * cfg );
 
-/* Debug commands: "FAULT <name>" over UDP or keys 1-7 set a pending bit
- * (1 << fault_id_t) and raise IRQ_FAULT. Returns and clears the pending bits. */
-unsigned hal_input_take_faults( void );
+/* Debug commands: "FAULT <name>" over UDP or keys 1-7 add one to a pending
+ * count for that fault (a fault_id_t) and raise IRQ_FAULT. Returns how many
+ * of that command are pending and clears the count. */
+unsigned hal_input_take_fault( int id );
 
 #endif /* HAL_INPUT_H */

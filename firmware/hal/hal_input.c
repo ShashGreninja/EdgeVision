@@ -15,7 +15,9 @@
  * uses printf directly and talks to the firmware only by raising interrupts. */
 
 static hal_input_cfg_t s_cfg;
-static atomic_uint s_pending_faults; /* One bit per fault_id_t. */
+/* Commands waiting for FaultTask, counted per fault so that two identical
+ * commands arriving close together are both carried out. */
+static atomic_uint s_pending_faults[ FAULT_COUNT ];
 
 static void prvRaiseMotion( const char * source )
 {
@@ -28,7 +30,7 @@ static void prvRaiseFault( int id )
 {
     printf( "[hw] debug command: %s\n", FAULT_NAMES[ id ] );
     fflush( stdout );
-    atomic_fetch_or( &s_pending_faults, 1u << id );
+    atomic_fetch_add( &s_pending_faults[ id ], 1u );
     vPortGenerateSimulatedInterruptFromWindowsThread( IRQ_FAULT );
 }
 
@@ -125,9 +127,9 @@ static DWORD WINAPI prvUdpThread( LPVOID param )
     }
 }
 
-unsigned hal_input_take_faults( void )
+unsigned hal_input_take_fault( int id )
 {
-    return atomic_exchange( &s_pending_faults, 0u );
+    return atomic_exchange( &s_pending_faults[ id ], 0u );
 }
 
 static DWORD WINAPI prvAutoMotionThread( LPVOID param )

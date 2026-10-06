@@ -134,11 +134,9 @@ static void prvFaultTask( void * param )
     {
         ( void ) ulTaskNotifyTake( pdTRUE, pdMS_TO_TICKS( 100 ) );
 
-        const unsigned pending = hal_input_take_faults();
-
         for( int id = 0; id < FAULT_COUNT; id++ )
         {
-            if( pending & ( 1u << id ) )
+            for( unsigned n = hal_input_take_fault( id ); n > 0; n-- )
             {
                 prvInject( ( fault_id_t ) id );
             }
