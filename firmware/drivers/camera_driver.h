@@ -38,4 +38,7 @@ void camera_note_activity( void );
 
 int camera_is_streaming( void );
 
+/* Total time the sensor has been powered and streaming, in ms. */
+uint32_t camera_awake_ms( void );
+
 #endif /* CAMERA_DRIVER_H */

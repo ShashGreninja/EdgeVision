@@ -30,6 +30,8 @@ static volatile camera_stats_t s_stats;
 static volatile int s_streaming;
 static int s_next_is_wake; /* The next captured frame is the first after wake-up. */
 static uint32_t s_dma_timeout_streak;
+static volatile TickType_t s_awake_ticks;  /* Completed streaming sessions. */
+static volatile TickType_t s_session_start; /* Start of the current one.     */
 
 /*-------------------------- Interrupt handlers ---------------------------*/
 
@@ -216,6 +218,7 @@ static void prvCameraTask( void * param )
 
         last_motion = xTaskGetTickCount();
         s_stats.wakeups++;
+        s_session_start = last_motion;
         s_streaming = 1;
         s_next_is_wake = 1;
         hal_sensor_set_power( 1 );
@@ -229,7 +232,10 @@ static void prvCameraTask( void * param )
 
         hal_sensor_set_power( 0 );
         ( void ) hal_sensor_dma_abort();
+        taskENTER_CRITICAL();
+        s_awake_ticks += xTaskGetTickCount() - s_session_start;
         s_streaming = 0;
+        taskEXIT_CRITICAL();
         LOG( "[camera] no activity for %d s -> sensor off, idle", QUIET_TIMEOUT_MS / 1000 );
     }
 }
@@ -269,4 +275,14 @@ void camera_get_stats( camera_stats_t * out )
 int camera_is_streaming( void )
 {
     return s_streaming;
+}
+
+uint32_t camera_awake_ms( void )
+{
+    TickType_t ticks;
+
+    taskENTER_CRITICAL();
+    ticks = s_awake_ticks + ( s_streaming ? ( xTaskGetTickCount() - s_session_start ) : 0 );
+    taskEXIT_CRITICAL();
+    return ( uint32_t ) ( ticks * portTICK_PERIOD_MS );
 }

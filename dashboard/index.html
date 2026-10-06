@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EdgeVision dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="viz-root">
+
+<header class="top">
+  <div class="brand">
+    <h1>EdgeVision</h1>
+    <span class="muted" id="device">waiting for camera...</span>
+  </div>
+  <div class="pills">
+    <span class="pill" id="state-pill"><span class="dot"></span><span id="state">offline</span></span>
+    <span class="pill" id="link-pill"><span class="dot"></span><span id="link">no Wi-Fi module</span></span>
+    <span class="pill muted" id="uptime">uptime -</span>
+  </div>
+</header>
+
+<main class="grid">
+
+  <section class="card hero">
+    <h2>Bandwidth saved</h2>
+    <div class="hero-number" id="saved">-</div>
+    <p class="muted" id="saved-detail">compared with streaming video to the cloud while the camera is awake</p>
+    <p class="muted small" id="saved-always">-</p>
+  </section>
+
+  <section class="card stats">
+    <div class="stat"><span class="label">Events sent</span><span class="value" id="events">-</span></div>
+    <div class="stat"><span class="label">Frames captured / s</span><span class="value" id="fps">-</span></div>
+    <div class="stat"><span class="label">AI chip checks / s</span><span class="value" id="npu">-</span></div>
+    <div class="stat"><span class="label">AI chip latency</span><span class="value" id="npu-ms">-</span></div>
+  </section>
+
+  <section class="card wide">
+    <div class="card-head">
+      <h2>Where each frame went, last 60 s</h2>
+      <button class="link-button" id="table-toggle" aria-pressed="false">Show as table</button>
+    </div>
+    <ul class="legend" aria-label="Legend">
+      <li><span class="swatch s-full"></span>Checked by the AI chip</li>
+      <li><span class="swatch s-drop"></span>Dropped by the governor (over budget)</li>
+      <li><span class="swatch s-gate"></span>Stopped at the motion gate (nothing moved)</li>
+    </ul>
+    <div class="chart-wrap" id="chart-wrap">
+      <svg id="chart" viewBox="0 0 640 200" role="img" aria-label="Frames per second by outcome, last 60 seconds"></svg>
+      <div class="tooltip" id="tooltip" hidden></div>
+    </div>
+    <table class="data-table" id="data-table" hidden>
+      <thead><tr><th>Second</th><th>AI chip</th><th>Dropped</th><th>Motion gate</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>Governor</h2>
+    <p class="muted small">Last 15 frames, oldest first. Budget: 1000 ms of compute per second.</p>
+    <div class="history" id="history" aria-label="Last 15 frame outcomes"></div>
+    <div class="kv"><span>Expected cost per frame</span><b id="est">-</b></div>
+    <div class="kv"><span>CPU overload fault</span><b id="overload">off</b></div>
+  </section>
+
+  <section class="card">
+    <h2>What the camera sees</h2>
+    <p class="muted small">Best detector score this second (0 to 1). Events need 0.50 in 3 of 5 checks.</p>
+    <div class="scores" id="scores"></div>
+  </section>
+
+  <section class="card">
+    <h2>Device health</h2>
+    <div class="slots" id="slots" aria-label="Frame buffer slots"></div>
+    <div class="meter" aria-label="RAM in use"><div class="meter-fill" id="heap-bar"></div></div>
+    <div class="kv"><span>RAM in use</span><b id="heap">-</b></div>
+    <div class="kv"><span>Allocations after start-up</span><b id="late">-</b></div>
+    <div class="kv"><span>Watchdog restarts</span><b id="restarts">-</b></div>
+    <div class="kv"><span>Corrupt frames caught</span><b id="corrupt">-</b></div>
+    <div class="kv"><span>Sensor resets</span><b id="resets">-</b></div>
+    <div class="kv"><span>Events waiting to send</span><b id="queued">-</b></div>
+  </section>
+
+  <section class="card">
+    <h2>Break it on purpose</h2>
+    <p class="muted small">Each fault has a detection and a recovery path. Watch the panels react.</p>
+    <div class="buttons">
+      <button data-action="motion" class="primary">Trigger motion</button>
+      <button data-fault="camera_disconnect">Camera disconnect</button>
+      <button data-fault="frame_corrupt">Frame corruption</button>
+      <button data-fault="mem_pressure">Memory pressure</button>
+      <button data-fault="inference_hang">AI chip hang</button>
+      <button data-fault="network_down">Network down</button>
+      <button data-fault="cpu_overload">CPU overload</button>
+      <button data-fault="selftest">Send test event</button>
+    </div>
+    <p class="muted small" id="action-result" role="status"></p>
+  </section>
+
+  <section class="card wide">
+    <div class="card-head">
+      <h2>Events in the cloud</h2>
+      <span class="muted small" id="api-source"></span>
+    </div>
+    <table class="events-table">
+      <thead><tr><th>Received</th><th>Event</th><th>Confidence</th><th>Device</th><th>Frame</th></tr></thead>
+      <tbody id="events-body"><tr><td colspan="5" class="muted">No events yet.</td></tr></tbody>
+    </table>
+  </section>
+
+</main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

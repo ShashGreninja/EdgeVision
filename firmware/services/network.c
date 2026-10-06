@@ -12,6 +12,7 @@
 #include "common/log.h"
 #include "hal/hal_irq.h"
 #include "hal/hal_link.h"
+#include "services/telemetry.h"
 #include "services/watchdog.h"
 
 #define NETWORK_STACK_WORDS    ( configMINIMAL_STACK_SIZE * 2 )
@@ -265,7 +266,7 @@ void network_post_event( const event_t * ev )
 
 void network_send_telemetry( const char * json )
 {
-    char line[ 1024 ];
+    static char line[ TELEMETRY_JSON_MAX + 16 ]; /* Only TelemetryTask calls this. */
     const int len = snprintf( line, sizeof( line ), "AT+TEL=%s\n", json );
 
     if( s_stats.cable && ( len > 0 ) && ( len < ( int ) sizeof( line ) ) && prvSendLine( line, ( size_t ) len ) )
