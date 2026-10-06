@@ -26,7 +26,8 @@
 
 /* Memory: the simulated device has 512 KB of RAM. */
 #define configSUPPORT_DYNAMIC_ALLOCATION         1
-#define configSUPPORT_STATIC_ALLOCATION          0
+#define configSUPPORT_STATIC_ALLOCATION          1 /* Restartable tasks reuse their own memory. */
+#define configKERNEL_PROVIDED_STATIC_MEMORY      1
 #define configTOTAL_HEAP_SIZE                    ( ( size_t ) ( 512 * 1024 ) )
 #define configUSE_MALLOC_FAILED_HOOK             1
 #define configCHECK_FOR_STACK_OVERFLOW           0 /* Not meaningful on the Windows port. */

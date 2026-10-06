@@ -14,6 +14,9 @@ certs/
 models/*.onnx
 eval/clips/
 
+# Local cloud stub data
+cloud/local/*.db
+
 # Python
 __pycache__/
 .venv/

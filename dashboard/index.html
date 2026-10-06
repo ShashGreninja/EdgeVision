@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EdgeVision dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="viz-root">
+
+<header class="top">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="2.5" y="6" width="14" height="12" rx="2.5"></rect>
+      <path d="M16.5 10.5l5-3v9l-5-3z"></path>
+      <circle cx="9.5" cy="12" r="2.5"></circle>
+    </svg>
+    <div>
+      <h1>EdgeVision</h1>
+      <p class="subtitle" id="device">Waiting for the camera</p>
+    </div>
+  </div>
+  <div class="pills">
+    <span class="pill" id="state-pill"><span class="dot"></span><span>offline</span></span>
+    <span class="pill" id="link-pill"><span class="dot"></span><span>no Wi-Fi module</span></span>
+    <span class="pill quiet" id="uptime">uptime --:--</span>
+  </div>
+</header>
+
+<div class="banner" id="banner" role="status">
+  Waiting for telemetry. Start the Wi-Fi module and the firmware (<code>scripts\run_demo.ps1</code> starts everything).
+</div>
+
+<main class="layout">
+
+  <section class="kpis" aria-label="Key figures">
+    <div class="kpi kpi-hero">
+      <span class="eyebrow">Bandwidth saved</span>
+      <span class="kpi-value" id="saved">--</span>
+      <span class="kpi-note" id="saved-detail">vs streaming video while awake</span>
+    </div>
+    <div class="kpi">
+      <span class="eyebrow">Events sent</span>
+      <span class="kpi-value" id="events">--</span>
+      <span class="kpi-note" id="last-event">none yet</span>
+    </div>
+    <div class="kpi">
+      <span class="eyebrow">Frames per second</span>
+      <span class="kpi-value" id="fps">--</span>
+      <span class="kpi-note">captured from a 30 fps sensor</span>
+    </div>
+    <div class="kpi">
+      <span class="eyebrow">AI chip checks</span>
+      <span class="kpi-value" id="npu">--</span>
+      <span class="kpi-note" id="npu-ms">per second</span>
+    </div>
+    <div class="kpi">
+      <span class="eyebrow">RAM in use</span>
+      <span class="kpi-value" id="heap">--</span>
+      <div class="meter" aria-hidden="true"><div class="meter-fill" id="heap-bar"></div></div>
+      <span class="kpi-note" id="heap-note">of 512 KB</span>
+    </div>
+  </section>
+
+  <section class="card span-2">
+    <div class="card-head">
+      <div>
+        <h2>Where each frame went</h2>
+        <p class="card-sub">Frames per second over the last 60 seconds</p>
+      </div>
+      <button class="text-button" id="table-toggle" aria-pressed="false">Show table</button>
+    </div>
+    <ul class="legend" aria-label="Legend">
+      <li><span class="swatch s-full"></span>Checked by the AI chip</li>
+      <li><span class="swatch s-drop"></span>Dropped by the governor</li>
+      <li><span class="swatch s-gate"></span>Stopped at the motion gate</li>
+    </ul>
+    <div class="chart-wrap" id="chart-wrap">
+      <svg id="chart" viewBox="0 0 640 220" role="img" aria-label="Frames per second by outcome, last 60 seconds"></svg>
+      <div class="tooltip" id="tooltip" hidden></div>
+    </div>
+    <div class="table-scroll" id="table-scroll" hidden>
+      <table class="table">
+        <thead><tr><th>Second</th><th class="num">AI chip</th><th class="num">Dropped</th><th class="num">Motion gate</th></tr></thead>
+        <tbody id="data-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <div>
+        <h2>Frame budget</h2>
+        <p class="card-sub">1000 ms of compute per second</p>
+      </div>
+      <span class="badge warn" id="overload-badge" hidden>CPU overload</span>
+    </div>
+    <span class="eyebrow">Last 15 frames, oldest first</span>
+    <div class="history" id="history" aria-label="Last 15 frame outcomes"></div>
+    <div class="budget">
+      <div class="row-between"><span class="muted">Budget used</span><b id="budget-used">--</b></div>
+      <div class="meter"><div class="meter-fill accent" id="budget-bar"></div></div>
+    </div>
+    <dl class="kv">
+      <div><dt>Expected cost per frame</dt><dd id="est">--</dd></div>
+      <div><dt>Admitted / dropped this second</dt><dd id="admit">--</dd></div>
+    </dl>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <div>
+        <h2>What the camera sees</h2>
+        <p class="card-sub">Best score this second. An event needs 0.50 in 3 of 5 checks.</p>
+      </div>
+    </div>
+    <div class="scores" id="scores"></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <div>
+        <h2>Device health</h2>
+        <p class="card-sub">Frame slots, recovery counters, network queue</p>
+      </div>
+      <span class="badge warn" id="mem-badge" hidden>Memory pressure</span>
+    </div>
+    <div class="slots" id="slots" aria-label="Frame buffer slots"></div>
+    <dl class="kv">
+      <div><dt>Allocations after start-up</dt><dd id="late">--</dd></div>
+      <div><dt>Watchdog restarts</dt><dd id="restarts">--</dd></div>
+      <div><dt>Corrupt frames caught</dt><dd id="corrupt">--</dd></div>
+      <div><dt>Sensor resets</dt><dd id="resets">--</dd></div>
+      <div><dt>Events waiting to send</dt><dd id="queued">--</dd></div>
+    </dl>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <div>
+        <h2>Break it on purpose</h2>
+        <p class="card-sub">Every fault has a detection and a recovery path</p>
+      </div>
+    </div>
+    <button class="button primary wide" data-action="motion">Trigger motion</button>
+    <div class="buttons">
+      <button class="button" data-fault="camera_disconnect">Camera disconnect</button>
+      <button class="button" data-fault="frame_corrupt">Frame corruption</button>
+      <button class="button" data-fault="mem_pressure">Memory pressure</button>
+      <button class="button" data-fault="inference_hang">AI chip hang</button>
+      <button class="button" data-fault="network_down">Network down</button>
+      <button class="button" data-fault="cpu_overload">CPU overload</button>
+    </div>
+    <div class="row-between controls-foot">
+      <button class="text-button" data-fault="selftest">Send a test event</button>
+      <span class="muted small" id="action-result" role="status"></span>
+    </div>
+  </section>
+
+  <section class="card span-3">
+    <div class="card-head">
+      <div>
+        <h2>Events in the cloud</h2>
+        <p class="card-sub" id="api-source">Latest events stored by the backend</p>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table class="table events">
+        <thead><tr><th>When</th><th>Event</th><th>Confidence</th><th>Device</th><th class="num">Frame</th></tr></thead>
+        <tbody id="events-body"><tr><td colspan="5" class="empty">No events yet. Trigger motion with someone in view.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

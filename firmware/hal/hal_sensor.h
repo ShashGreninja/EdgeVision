@@ -48,6 +48,18 @@ uint32_t hal_sensor_last_seq( void );
 
 void hal_sensor_get_stats( hal_sensor_stats_t * out );
 
+/* CRC-32 the ISP computed over the last transferred frame, before the DMA
+ * copy. The firmware recomputes it to detect corruption in transfer. */
+uint32_t hal_sensor_last_crc( void );
+
+/* Power-cycle the sensor. Returns 0 if it responds, -1 if it does not. */
+int hal_sensor_reset( void );
+
+/* Fault injection: stop delivering frames for ms milliseconds (a loose
+ * cable), or corrupt the next n transfers (a noisy bus). */
+void hal_sensor_fault_disconnect( uint32_t ms );
+void hal_sensor_fault_corrupt( uint32_t n );
+
 #ifdef __cplusplus
 }
 #endif

@@ -4,6 +4,10 @@ project(edgevision_firmware C CXX)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
+# Write compile_commands.json so editors (VS Code C/C++, clangd) see the same
+# include paths as the compiler, including the fetched FreeRTOS headers.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 include(FetchContent)
 
 # ---- FreeRTOS kernel (Windows simulator port) --------------------------------
@@ -23,20 +27,46 @@ FetchContent_Declare(freertos_kernel
 FetchContent_MakeAvailable(freertos_kernel)
 
 # ---- OpenCV (used only by the virtual hardware, never by firmware tasks) ------
-find_package(OpenCV REQUIRED COMPONENTS core imgproc videoio)
+find_package(OpenCV REQUIRED COMPONENTS core imgproc videoio dnn)
 
 # ---- Firmware -----------------------------------------------------------------
 add_executable(edgevision
     main.c
+    common/crc32.c
     common/log.c
     hal/hal_sensor.cpp
+    hal/hal_npu.cpp
     hal/hal_input.c
+    hal/hal_link.c
+    hal/hal_time.c
     drivers/frame_pool.c
     drivers/camera_driver.c
-    pipeline/motion_task.c
+    pipeline/motion.c
+    pipeline/inference.c
+    pipeline/decision.c
+    services/faults.c
+    services/governor.c
+    services/network.c
     services/telemetry.c
+    services/watchdog.c
 )
 
 target_include_directories(edgevision PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_options(edgevision PRIVATE -Wall -Wextra)
 target_link_libraries(edgevision PRIVATE freertos_kernel freertos_config ${OpenCV_LIBS} winmm ws2_32)
+
+# ---- Tests ----------------------------------------------------------------------
+# Unit tests for firmware modules, run on the RTOS. Functional tests that drive
+# the whole firmware live in tests/test_firmware.py (see test.ps1).
+add_executable(edgevision_tests
+    tests/test_frame_pool.c
+    drivers/frame_pool.c
+    common/crc32.c
+    common/log.c
+)
+target_include_directories(edgevision_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_options(edgevision_tests PRIVATE -Wall -Wextra)
+target_link_libraries(edgevision_tests PRIVATE freertos_kernel freertos_config winmm)
+
+enable_testing()
+add_test(NAME frame_pool_unit COMMAND edgevision_tests)

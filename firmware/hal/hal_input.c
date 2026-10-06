@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <stdatomic.h>
+
+#include "common/fault_ids.h"
 #include "hal/hal_input.h"
 #include "hal/hal_irq.h"
 
@@ -12,12 +15,38 @@
  * uses printf directly and talks to the firmware only by raising interrupts. */
 
 static hal_input_cfg_t s_cfg;
+/* Commands waiting for FaultTask, counted per fault so that two identical
+ * commands arriving close together are both carried out. */
+static atomic_uint s_pending_faults[ FAULT_COUNT ];
 
 static void prvRaiseMotion( const char * source )
 {
     printf( "[hw] motion pin raised (%s)\n", source );
     fflush( stdout );
     vPortGenerateSimulatedInterruptFromWindowsThread( IRQ_MOTION );
+}
+
+static void prvRaiseFault( int id )
+{
+    printf( "[hw] debug command: %s\n", FAULT_NAMES[ id ] );
+    fflush( stdout );
+    atomic_fetch_add( &s_pending_faults[ id ], 1u );
+    vPortGenerateSimulatedInterruptFromWindowsThread( IRQ_FAULT );
+}
+
+static void prvFaultByName( const char * name )
+{
+    for( int id = 0; id < FAULT_COUNT; id++ )
+    {
+        if( strcmp( name, FAULT_NAMES[ id ] ) == 0 )
+        {
+            prvRaiseFault( id );
+            return;
+        }
+    }
+
+    printf( "[hw] debug command: unknown fault '%s'\n", name );
+    fflush( stdout );
 }
 
 static DWORD WINAPI prvKeyboardThread( LPVOID param )
@@ -31,6 +60,10 @@ static DWORD WINAPI prvKeyboardThread( LPVOID param )
         if( ( c == 'm' ) || ( c == 'M' ) )
         {
             prvRaiseMotion( "keyboard" );
+        }
+        else if( ( c >= '1' ) && ( c < '1' + FAULT_COUNT ) )
+        {
+            prvRaiseFault( c - '1' );
         }
         else if( ( c == 'q' ) || ( c == 'Q' ) )
         {
@@ -68,17 +101,35 @@ static DWORD WINAPI prvUdpThread( LPVOID param )
         return 1;
     }
 
-    printf( "[hw] udp: listening for MOTION on 127.0.0.1:%d\n", s_cfg.udp_port );
+    printf( "[hw] udp: listening for MOTION / FAULT commands on 127.0.0.1:%d\n", s_cfg.udp_port );
 
     for( ; ; )
     {
         const int n = recvfrom( sock, buf, ( int ) sizeof( buf ) - 1, 0, NULL, NULL );
 
-        if( ( n >= 6 ) && ( strncmp( buf, "MOTION", 6 ) == 0 ) )
+        if( n <= 0 )
         {
-            prvRaiseMotion( "udp" );
+            continue;
+        }
+
+        buf[ n ] = '\0';
+
+        if( strncmp( buf, "MOTION", 6 ) == 0 )
+        {
+            /* "MOTION ring human <device>" from the gateway, or plain "MOTION". */
+            prvRaiseMotion( ( n > 7 ) ? buf + 7 : "udp" );
+        }
+        else if( strncmp( buf, "FAULT ", 6 ) == 0 )
+        {
+            buf[ strcspn( buf, "\r\n" ) ] = '\0';
+            prvFaultByName( buf + 6 );
         }
     }
+}
+
+unsigned hal_input_take_fault( int id )
+{
+    return atomic_exchange( &s_pending_faults[ id ], 0u );
 }
 
 static DWORD WINAPI prvAutoMotionThread( LPVOID param )

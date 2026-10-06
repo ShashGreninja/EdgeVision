@@ -1,0 +1,295 @@
+{
+  "generated": "2026-10-07 00:16",
+  "clip_runs": [
+    {
+      "clip": "testclip.mp4",
+      "run": 1,
+      "detected": true,
+      "first_event_clip_s": 4.52,
+      "false_events": 0,
+      "events": [
+        {
+          "event": "person_detected",
+          "confidence": 0.72,
+          "clip_t": 4.52,
+          "correct": true
+        },
+        {
+          "event": "person_detected",
+          "confidence": 0.76,
+          "clip_t": 20.84,
+          "correct": true
+        },
+        {
+          "event": "person_detected",
+          "confidence": 0.64,
+          "clip_t": 4.48,
+          "correct": true
+        }
+      ],
+      "coverage": 1.0,
+      "awake_s": 39.2,
+      "frames": {
+        "captured": 1228,
+        "gated_pct": 76.54723127035831,
+        "npu_pct": 11.889250814332248,
+        "dropped_pct": 11.074918566775244,
+        "npu_jobs": 146
+      },
+      "uploaded_bytes": 520,
+      "published": 3,
+      "bandwidth": {
+        "uploaded_bytes": 520,
+        "streaming_baseline_bytes": 9800000,
+        "always_on_baseline_bytes": 10000000,
+        "saved_vs_streaming_pct": 99.995,
+        "saved_vs_always_on_pct": 99.9948
+      },
+      "late_allocs": 0,
+      "heap_peak_kb": 280
+    },
+    {
+      "clip": "testclip.mp4",
+      "run": 2,
+      "detected": true,
+      "first_event_clip_s": 4.52,
+      "false_events": 0,
+      "events": [
+        {
+          "event": "person_detected",
+          "confidence": 0.72,
+          "clip_t": 4.52,
+          "correct": true
+        },
+        {
+          "event": "person_detected",
+          "confidence": 0.76,
+          "clip_t": 20.84,
+          "correct": true
+        },
+        {
+          "event": "person_detected",
+          "confidence": 0.71,
+          "clip_t": 4.48,
+          "correct": true
+        }
+      ],
+      "coverage": 1.0,
+      "awake_s": 39.29,
+      "frames": {
+        "captured": 1237,
+        "gated_pct": 77.20291026677445,
+        "npu_pct": 11.398544866612772,
+        "dropped_pct": 10.913500404203718,
+        "npu_jobs": 141
+      },
+      "uploaded_bytes": 520,
+      "published": 3,
+      "bandwidth": {
+        "uploaded_bytes": 520,
+        "streaming_baseline_bytes": 9822500,
+        "always_on_baseline_bytes": 10000000,
+        "saved_vs_streaming_pct": 99.995,
+        "saved_vs_always_on_pct": 99.9948
+      },
+      "late_allocs": 0,
+      "heap_peak_kb": 280
+    },
+    {
+      "clip": "testclip.mp4",
+      "run": 3,
+      "detected": true,
+      "first_event_clip_s": 4.52,
+      "false_events": 0,
+      "events": [
+        {
+          "event": "person_detected",
+          "confidence": 0.72,
+          "clip_t": 4.52,
+          "correct": true
+        },
+        {
+          "event": "person_detected",
+          "confidence": 0.76,
+          "clip_t": 20.84,
+          "correct": true
+        }
+      ],
+      "coverage": 1.0,
+      "awake_s": 28.919,
+      "frames": {
+        "captured": 905,
+        "gated_pct": 74.80662983425414,
+        "npu_pct": 12.486187845303867,
+        "dropped_pct": 12.154696132596685,
+        "npu_jobs": 113
+      },
+      "uploaded_bytes": 346,
+      "published": 2,
+      "bandwidth": {
+        "uploaded_bytes": 346,
+        "streaming_baseline_bytes": 7229750,
+        "always_on_baseline_bytes": 10000000,
+        "saved_vs_streaming_pct": 99.995,
+        "saved_vs_always_on_pct": 99.9965
+      },
+      "late_allocs": 0,
+      "heap_peak_kb": 280
+    },
+    {
+      "clip": "testclip.mp4",
+      "run": 4,
+      "detected": true,
+      "first_event_clip_s": 4.52,
+      "false_events": 0,
+      "events": [
+        {
+          "event": "person_detected",
+          "confidence": 0.72,
+          "clip_t": 4.52,
+          "correct": true
+        },
+        {
+          "event": "person_detected",
+          "confidence": 0.76,
+          "clip_t": 20.88,
+          "correct": true
+        },
+        {
+          "event": "person_detected",
+          "confidence": 0.64,
+          "clip_t": 4.48,
+          "correct": true
+        }
+      ],
+      "coverage": 1.0,
+      "awake_s": 39.228,
+      "frames": {
+        "captured": 1233,
+        "gated_pct": 75.75020275750202,
+        "npu_pct": 12.084347120843471,
+        "dropped_pct": 11.516626115166261,
+        "npu_jobs": 149
+      },
+      "uploaded_bytes": 520,
+      "published": 3,
+      "bandwidth": {
+        "uploaded_bytes": 520,
+        "streaming_baseline_bytes": 9807000,
+        "always_on_baseline_bytes": 10000000,
+        "saved_vs_streaming_pct": 99.995,
+        "saved_vs_always_on_pct": 99.9948
+      },
+      "late_allocs": 0,
+      "heap_peak_kb": 280
+    },
+    {
+      "clip": "testclip.mp4",
+      "run": 5,
+      "detected": true,
+      "first_event_clip_s": 4.52,
+      "false_events": 0,
+      "events": [
+        {
+          "event": "person_detected",
+          "confidence": 0.72,
+          "clip_t": 4.52,
+          "correct": true
+        }
+      ],
+      "coverage": 0.5454437086092715,
+      "awake_s": 13.727,
+      "frames": {
+        "captured": 445,
+        "gated_pct": 81.79775280898876,
+        "npu_pct": 9.887640449438202,
+        "dropped_pct": 7.415730337078652,
+        "npu_jobs": 44
+      },
+      "uploaded_bytes": 173,
+      "published": 1,
+      "bandwidth": {
+        "uploaded_bytes": 173,
+        "streaming_baseline_bytes": 3431750,
+        "always_on_baseline_bytes": 10000000,
+        "saved_vs_streaming_pct": 99.995,
+        "saved_vs_always_on_pct": 99.9983
+      },
+      "late_allocs": 0,
+      "heap_peak_kb": 280
+    },
+    {
+      "clip": "testclip.mp4",
+      "run": 6,
+      "detected": true,
+      "first_event_clip_s": 4.52,
+      "false_events": 0,
+      "events": [
+        {
+          "event": "person_detected",
+          "confidence": 0.72,
+          "clip_t": 4.52,
+          "correct": true
+        }
+      ],
+      "coverage": 0.5387682119205297,
+      "awake_s": 13.559,
+      "frames": {
+        "captured": 445,
+        "gated_pct": 82.92134831460675,
+        "npu_pct": 9.438202247191011,
+        "dropped_pct": 7.191011235955056,
+        "npu_jobs": 42
+      },
+      "uploaded_bytes": 173,
+      "published": 1,
+      "bandwidth": {
+        "uploaded_bytes": 173,
+        "streaming_baseline_bytes": 3389750,
+        "always_on_baseline_bytes": 10000000,
+        "saved_vs_streaming_pct": 99.995,
+        "saved_vs_always_on_pct": 99.9983
+      },
+      "late_allocs": 0,
+      "heap_peak_kb": 280
+    }
+  ],
+  "empty_runs": [
+    {
+      "run": 1,
+      "events": 0,
+      "npu_jobs": 213,
+      "published": 0
+    },
+    {
+      "run": 2,
+      "events": 0,
+      "npu_jobs": 213,
+      "published": 0
+    },
+    {
+      "run": 3,
+      "events": 0,
+      "npu_jobs": 213,
+      "published": 0
+    }
+  ],
+  "summary": {
+    "visits": 6,
+    "visits_detected": 6,
+    "median_first_event_s": 4.52,
+    "median_coverage": 1.0,
+    "min_coverage": 0.5387682119205297,
+    "full_coverage_runs": 4,
+    "false_events": 0,
+    "empty_scene_events": 0,
+    "empty_scene_npu_jobs": 639,
+    "median_npu_pct": 11.64389784047251,
+    "median_gated_pct": 76.87507076856639,
+    "median_uploaded_bytes": 433,
+    "median_baseline_mb": 8.514875,
+    "median_saved_pct": 99.995,
+    "max_heap_kb": 280,
+    "late_allocs": 0
+  }
+}
