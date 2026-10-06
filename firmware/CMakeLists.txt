@@ -53,7 +53,7 @@ target_link_libraries(edgevision PRIVATE freertos_kernel freertos_config ${OpenC
 
 # ---- Tests ----------------------------------------------------------------------
 # Unit tests for firmware modules, run on the RTOS. Functional tests that drive
-# the whole firmware live in tests/test_day1.py (see test.ps1).
+# the whole firmware live in tests/test_firmware.py (see test.ps1).
 add_executable(edgevision_tests
     tests/test_frame_pool.c
     drivers/frame_pool.c
