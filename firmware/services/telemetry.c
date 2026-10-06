@@ -13,6 +13,7 @@
 #include "pipeline/inference.h"
 #include "pipeline/motion.h"
 #include "services/governor.h"
+#include "services/network.h"
 
 #define TELEMETRY_STACK_WORDS    ( configMINIMAL_STACK_SIZE * 2 )
 
@@ -57,6 +58,7 @@ static void prvTelemetryTask( void * param )
         motion_stats_t mot;
         inference_stats_t inf;
         decision_stats_t dec;
+        network_stats_t net;
         char pool[ FRAME_POOL_SLOTS + 1 ];
 
         vTaskDelayUntil( &wake, pdMS_TO_TICKS( 1000 ) );
@@ -70,7 +72,9 @@ static void prvTelemetryTask( void * param )
         decision_get_stats( &dec );
         frame_pool_snapshot( pool );
 
-        LOG( "[%3lus] %-9s | cam %2lu/s ovr %lu | gov %2lu/%2lu [%s] est %3lu ms | gate %2lu/s | npu %2lu/s %3lu ms | best P%.2f V%.2f A%.2f | events %lu | pool [%s] | heap %lu/%lu KB late %lu",
+        network_get_stats( &net );
+
+        LOG( "[%3lus] %-9s | cam %2lu/s ovr %lu | gov %2lu/%2lu [%s] est %3lu ms | gate %2lu/s | npu %2lu/s %3lu ms | best P%.2f V%.2f A%.2f | events %lu | net %s q%lu pub %lu | pool [%s] | heap %lu/%lu KB late %lu",
              ( unsigned long ) seconds,
              camera_is_streaming() ? "STREAMING" : "idle",
              ( unsigned long ) ( cam.frames_captured - cam_prev.frames_captured ),
@@ -86,6 +90,9 @@ static void prvTelemetryTask( void * param )
              ( double ) inf.peak[ CAT_VEHICLE ],
              ( double ) inf.peak[ CAT_ANIMAL ],
              ( unsigned long ) dec.events,
+             !net.cable ? "nomod" : ( net.online ? "up" : "DOWN" ),
+             ( unsigned long ) net.queued,
+             ( unsigned long ) net.published,
              pool,
              ( unsigned long ) prvKb( configTOTAL_HEAP_SIZE - xPortGetFreeHeapSize() ),
              ( unsigned long ) prvKb( configTOTAL_HEAP_SIZE ),

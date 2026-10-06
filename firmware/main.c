@@ -10,6 +10,8 @@
  *   --motion-thresh T per-cell brightness change that counts as motion (default: 20)
  *   --cpu-scale K     device CPU is K times slower than this PC (default: 20)
  *   --no-governor     admit every frame (to compare against the governor)
+ *   --link-port P     TCP port of the Wi-Fi module (default: 5056, 0 = no module)
+ *   --device-id ID    device name used in MQTT topics (default: edge-cam-01)
  *
  * Keys (in a console): m = motion, q = quit. */
 
@@ -32,6 +34,7 @@
 #include "pipeline/motion.h"
 #include "pipeline/pipeline_types.h"
 #include "services/governor.h"
+#include "services/network.h"
 #include "services/telemetry.h"
 
 #define MODEL_FP32    "object_detection_nanodet_2022nov.onnx"
@@ -94,6 +97,8 @@ int main( int argc, char ** argv )
     uint32_t motion_thresh = 20;
     uint32_t cpu_scale = 20;
     int governor = 1;
+    int link_port = 5056;
+    const char * device_id = "edge-cam-01";
     hal_input_cfg_t input = { .keyboard = 1, .udp_port = 5055, .auto_motion_s = 0 };
     QueueHandle_t frame_queue;
     QueueHandle_t infer_queue;
@@ -131,6 +136,14 @@ int main( int argc, char ** argv )
         else if( has_value && ( strcmp( argv[ i ], "--cpu-scale" ) == 0 ) )
         {
             cpu_scale = ( uint32_t ) atoi( argv[ ++i ] );
+        }
+        else if( has_value && ( strcmp( argv[ i ], "--link-port" ) == 0 ) )
+        {
+            link_port = atoi( argv[ ++i ] );
+        }
+        else if( has_value && ( strcmp( argv[ i ], "--device-id" ) == 0 ) )
+        {
+            device_id = argv[ ++i ];
         }
         else if( strcmp( argv[ i ], "--no-governor" ) == 0 )
         {
@@ -189,6 +202,7 @@ int main( int argc, char ** argv )
         ( motion_init( frame_queue, infer_queue, motion_thresh, cpu_scale ) != 0 ) ||
         ( inference_init( infer_queue, decision_queue ) != 0 ) ||
         ( decision_init( decision_queue ) != 0 ) ||
+        ( network_init( device_id, link_port ) != 0 ) ||
         ( telemetry_init( run_seconds ) != 0 ) )
     {
         prvFatal( "could not create tasks" );

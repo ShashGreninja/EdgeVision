@@ -37,6 +37,16 @@ typedef struct
     hal_roi_t box[ CAT_COUNT ];
 } detections_t;
 
+/* DecisionTask -> NetworkTask: one confirmed event, to be sent to the cloud. */
+typedef struct
+{
+    char name[ 24 ];      /* e.g. "person_detected". */
+    float confidence;
+    hal_roi_t box;
+    uint32_t seq;         /* Sensor frame sequence number. */
+    uint32_t uptime_ms;
+} event_t;
+
 static inline const char * category_name( int cat )
 {
     static const char * const names[ CAT_COUNT ] = { "person", "vehicle", "animal" };

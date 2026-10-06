@@ -1,10 +1,14 @@
 #include "pipeline/decision.h"
 
+#include <stdio.h>
+#include <string.h>
+
 #include "task.h"
 
 #include "common/log.h"
 #include "drivers/camera_driver.h"
 #include "pipeline/motion.h"
+#include "services/network.h"
 
 #define DECISION_STACK_WORDS    ( configMINIMAL_STACK_SIZE * 2 )
 
@@ -19,14 +23,24 @@ static uint8_t s_ever_fired[ CAT_COUNT ];
 
 static void prvRaiseEvent( int cat, float confidence, const detections_t * latest, const hal_roi_t * box )
 {
+    event_t ev;
+
     s_stats.events++;
     s_stats.events_by[ cat ]++;
 
-    /* This JSON is what NetworkTask will publish to AWS on Day 3. */
-    LOG( "[event] {\"event\":\"%s_detected\",\"confidence\":%.2f,\"zone\":\"%s\",\"seq\":%lu,\"box\":[%u,%u,%u,%u],\"uptime_ms\":%lu}",
-         category_name( cat ), ( double ) confidence, DECISION_ZONE, ( unsigned long ) latest->seq,
-         box->x, box->y, box->w, box->h,
-         ( unsigned long ) ( latest->at * portTICK_PERIOD_MS ) );
+    memset( &ev, 0, sizeof( ev ) );
+    snprintf( ev.name, sizeof( ev.name ), "%s_detected", category_name( cat ) );
+    ev.confidence = confidence;
+    ev.box = *box;
+    ev.seq = latest->seq;
+    ev.uptime_ms = ( uint32_t ) ( latest->at * portTICK_PERIOD_MS );
+
+    LOG( "[event] {\"event\":\"%s\",\"confidence\":%.2f,\"zone\":\"%s\",\"seq\":%lu,\"box\":[%u,%u,%u,%u],\"uptime_ms\":%lu}",
+         ev.name, ( double ) confidence, DECISION_ZONE, ( unsigned long ) ev.seq,
+         box->x, box->y, box->w, box->h, ( unsigned long ) ev.uptime_ms );
+
+    /* Only this small message ever leaves the device. */
+    network_post_event( &ev );
 }
 
 static void prvEvaluate( const detections_t * latest )

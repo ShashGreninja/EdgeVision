@@ -32,6 +32,7 @@ add_executable(edgevision
     hal/hal_sensor.cpp
     hal/hal_npu.cpp
     hal/hal_input.c
+    hal/hal_link.c
     hal/hal_time.c
     drivers/frame_pool.c
     drivers/camera_driver.c
@@ -39,6 +40,7 @@ add_executable(edgevision
     pipeline/inference.c
     pipeline/decision.c
     services/governor.c
+    services/network.c
     services/telemetry.c
 )
 
