@@ -18,8 +18,7 @@ static QueueHandle_t s_frames;
 static QueueHandle_t s_jobs;
 static TickType_t s_last_forward; /* When a frame last went to inference. */
 static hal_roi_t s_focus;         /* Where something was last seen.      */
-static TickType_t s_focus_at;
-static int s_has_focus;
+static int s_has_focus;           /* Cleared when the camera wakes.      */
 static uint32_t s_threshold;
 static uint32_t s_cpu_scale;
 static volatile motion_stats_t s_stats;
@@ -149,8 +148,13 @@ static void prvMotionTask( void * param )
         if( fb->wake || recheck )
         {
             taskENTER_CRITICAL();
-            const int focus = s_has_focus && !fb->wake &&
-                              ( ( fb->captured_at - s_focus_at ) <= pdMS_TO_TICKS( MOTION_FOCUS_MS ) );
+
+            if( fb->wake )
+            {
+                s_has_focus = 0; /* New session: forget the last one. */
+            }
+
+            const int focus = s_has_focus;
             const hal_roi_t focus_box = s_focus;
             taskEXIT_CRITICAL();
 
@@ -226,7 +230,6 @@ void motion_set_focus( const hal_roi_t * box )
 {
     taskENTER_CRITICAL();
     s_focus = *box;
-    s_focus_at = xTaskGetTickCount();
     s_has_focus = 1;
     taskEXIT_CRITICAL();
 }

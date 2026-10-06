@@ -23,11 +23,11 @@
 #define MOTION_MIN_CELLS   8   /* Changed cells needed to call it motion. */
 
 /* While streaming, send a re-check to inference at least this often even
- * without motion, so a person standing still is not missed. The re-check
- * looks where something was last seen (if within MOTION_FOCUS_MS), else at
- * the whole frame. */
+ * without motion, so a person standing still is not missed. A re-check looks
+ * where something was last seen this session (the whole frame if nothing has
+ * been seen yet): re-checks are for people who stopped moving, while anyone
+ * who moves is found through the motion gate. */
 #define MOTION_RECHECK_MS  500
-#define MOTION_FOCUS_MS    3000
 
 typedef struct
 {
