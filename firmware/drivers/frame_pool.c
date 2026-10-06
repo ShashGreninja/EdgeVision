@@ -82,9 +82,21 @@ frame_buf_t * frame_pool_get( int idx )
     return &s_slots[ idx ];
 }
 
+int frame_pool_reserve( TickType_t wait )
+{
+    const int idx = frame_pool_claim( wait );
+
+    if( idx >= 0 )
+    {
+        frame_pool_move( idx, BUF_FILLING, BUF_RESERVED );
+    }
+
+    return idx;
+}
+
 void frame_pool_snapshot( char * out )
 {
-    static const char letters[] = { 'F', 'W', 'R', 'P' };
+    static const char letters[] = { 'F', 'W', 'R', 'P', 'X' };
 
     xSemaphoreTake( s_lock, portMAX_DELAY );
 

@@ -46,4 +46,8 @@ void governor_complete( uint32_t reserved_us, uint32_t actual_us, char outcome )
 
 void governor_get_stats( governor_stats_t * out );
 
+/* Scale every frame's actual cost (percent; 100 = normal). Used to simulate
+ * the CPU being slowed down, e.g. by another workload. */
+void governor_set_load_percent( uint32_t percent );
+
 #endif /* GOVERNOR_H */

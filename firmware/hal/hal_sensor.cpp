@@ -1,4 +1,5 @@
 #include "hal/hal_sensor.h"
+#include "common/crc32.h"
 #include "hal/hal_irq.h"
 #include "hal/hal_video_mem.hpp"
 
@@ -34,7 +35,20 @@ std::atomic<uint32_t> g_last_seq { 0 };
 std::atomic<uint32_t> g_produced { 0 };
 std::atomic<uint32_t> g_transferred { 0 };
 std::atomic<uint32_t> g_overruns { 0 };
+std::atomic<uint32_t> g_last_crc { 0 };
+std::atomic<int64_t> g_disconnected_until { 0 }; /* steady_clock ms; 0 = connected. */
+std::atomic<uint32_t> g_corrupt_next { 0 };
 std::string g_clip;
+
+int64_t now_ms()
+{
+    return std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::steady_clock::now().time_since_epoch() ).count();
+}
+
+bool disconnected()
+{
+    return now_ms() < g_disconnected_until.load();
+}
 
 /* Fit a clip frame of any shape into the sensor's 16:9 frame without
  * distorting it (black bars at the sides or top/bottom). */
@@ -94,7 +108,7 @@ void sensor_thread()
         next += period;
         std::this_thread::sleep_until( next );
 
-        if( !g_powered.load() )
+        if( !g_powered.load() || disconnected() )
         {
             continue;
         }
@@ -145,7 +159,20 @@ void sensor_thread()
             continue;
         }
 
+        g_last_crc.store( crc32_compute( out.data, FRAME_BYTES ) );
         std::memcpy( dst, out.data, FRAME_BYTES );
+
+        /* Injected bus noise: flip bytes in the copy, after the CRC. */
+        if( g_corrupt_next.load() > 0 )
+        {
+            g_corrupt_next--;
+
+            for( int i = 0; i < 16; i++ )
+            {
+                dst[ ( seq * 7919u + static_cast<uint32_t>( i ) * 4801u ) % FRAME_BYTES ] ^= 0x5A;
+            }
+        }
+
         g_last_seq.store( seq );
         ++g_transferred;
         vPortGenerateSimulatedInterruptFromWindowsThread( IRQ_DMA_DONE );
@@ -199,4 +226,24 @@ extern "C" void hal_sensor_get_stats( hal_sensor_stats_t * out )
     out->produced = g_produced.load();
     out->transferred = g_transferred.load();
     out->overruns = g_overruns.load();
+}
+
+extern "C" uint32_t hal_sensor_last_crc( void )
+{
+    return g_last_crc.load();
+}
+
+extern "C" int hal_sensor_reset( void )
+{
+    return disconnected() ? -1 : 0;
+}
+
+extern "C" void hal_sensor_fault_disconnect( uint32_t ms )
+{
+    g_disconnected_until.store( now_ms() + ms );
+}
+
+extern "C" void hal_sensor_fault_corrupt( uint32_t n )
+{
+    g_corrupt_next.store( n );
 }

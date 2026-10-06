@@ -13,7 +13,8 @@
  *   --link-port P     TCP port of the Wi-Fi module (default: 5056, 0 = no module)
  *   --device-id ID    device name used in MQTT topics (default: edge-cam-01)
  *
- * Keys (in a console): m = motion, q = quit. */
+ * Keys (in a console): m = motion, 1-7 = inject a fault (see services/faults.h), q = quit.
+ * UDP 127.0.0.1:5055 accepts "MOTION ..." and "FAULT <name>". */
 
 #include <windows.h>
 #include <stdio.h>
@@ -33,6 +34,7 @@
 #include "pipeline/inference.h"
 #include "pipeline/motion.h"
 #include "pipeline/pipeline_types.h"
+#include "services/faults.h"
 #include "services/governor.h"
 #include "services/network.h"
 #include "services/telemetry.h"
@@ -205,6 +207,7 @@ int main( int argc, char ** argv )
         ( decision_init( decision_queue ) != 0 ) ||
         ( network_init( device_id, link_port ) != 0 ) ||
         ( watchdog_init() != 0 ) ||
+        ( faults_init() != 0 ) ||
         ( telemetry_init( run_seconds ) != 0 ) )
     {
         prvFatal( "could not create tasks" );

@@ -106,13 +106,16 @@ static void prvTelemetryTask( void * param )
 
         if( ( s_run_seconds > 0 ) && ( seconds >= s_run_seconds ) )
         {
-            LOG( "[done] %lu s: wakeups %lu | sensor %lu frames, overruns %lu | captured %lu, governor admitted %lu dropped %lu | "
+            LOG( "[done] %lu s: wakeups %lu | sensor %lu frames, overruns %lu, corrupt %lu, lost %lu, resets %lu | captured %lu, governor admitted %lu dropped %lu | "
                  "motion gated %lu forwarded %lu busy %lu | npu jobs %lu rejected %lu gone %lu (host %lu ms/job) | watchdog restarts %lu | "
                  "events %lu (person %lu, vehicle %lu, animal %lu) | heap peak %lu KB, late allocs %lu",
                  ( unsigned long ) seconds,
                  ( unsigned long ) cam.wakeups,
                  ( unsigned long ) hw.produced,
                  ( unsigned long ) hw.overruns,
+                 ( unsigned long ) cam.corrupt_frames,
+                 ( unsigned long ) cam.sensor_lost,
+                 ( unsigned long ) cam.sensor_resets,
                  ( unsigned long ) cam.frames_captured,
                  ( unsigned long ) gov.admitted,
                  ( unsigned long ) gov.dropped,

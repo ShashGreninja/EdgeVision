@@ -28,6 +28,7 @@ find_package(OpenCV REQUIRED COMPONENTS core imgproc videoio dnn)
 # ---- Firmware -----------------------------------------------------------------
 add_executable(edgevision
     main.c
+    common/crc32.c
     common/log.c
     hal/hal_sensor.cpp
     hal/hal_npu.cpp
@@ -39,6 +40,7 @@ add_executable(edgevision
     pipeline/motion.c
     pipeline/inference.c
     pipeline/decision.c
+    services/faults.c
     services/governor.c
     services/network.c
     services/telemetry.c
@@ -55,6 +57,7 @@ target_link_libraries(edgevision PRIVATE freertos_kernel freertos_config ${OpenC
 add_executable(edgevision_tests
     tests/test_frame_pool.c
     drivers/frame_pool.c
+    common/crc32.c
     common/log.c
 )
 target_include_directories(edgevision_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

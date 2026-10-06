@@ -3,6 +3,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include "common/crc32.h"
 #include "common/log.h"
 #include "drivers/frame_pool.h"
 #include "hal/hal_irq.h"
@@ -19,11 +20,16 @@
 #define CLAIM_WAIT_MS       ( 100 )
 #define CAMERA_STACK_WORDS  ( configMINIMAL_STACK_SIZE * 2 )
 
+#define SENSOR_LOST_TIMEOUTS          3    /* DMA timeouts in a row = sensor lost. */
+#define SENSOR_RESET_BACKOFF_MS       100
+#define SENSOR_RESET_BACKOFF_MAX_MS   1600 /* Stays under the 2 s watchdog. */
+
 static TaskHandle_t s_task;
 static QueueHandle_t s_frame_queue;
 static volatile camera_stats_t s_stats;
 static volatile int s_streaming;
 static int s_next_is_wake; /* The next captured frame is the first after wake-up. */
+static uint32_t s_dma_timeout_streak;
 
 /*-------------------------- Interrupt handlers ---------------------------*/
 
@@ -79,6 +85,38 @@ static int prvWaitForDma( TickType_t * last_motion )
     }
 }
 
+/* The sensor stopped delivering frames: power-cycle it until it answers,
+ * backing off 100, 200, 400 ... ms (capped below the watchdog timeout). */
+static void prvRecoverSensor( void )
+{
+    uint32_t backoff_ms = SENSOR_RESET_BACKOFF_MS;
+    uint32_t attempts = 0;
+
+    s_stats.sensor_lost++;
+    LOG( "[camera] sensor not responding (%d DMA timeouts) -> resetting", SENSOR_LOST_TIMEOUTS );
+
+    for( ; ; )
+    {
+        watchdog_kick( WD_CAMERA );
+        hal_sensor_set_power( 0 );
+        vTaskDelay( pdMS_TO_TICKS( backoff_ms ) );
+        hal_sensor_set_power( 1 );
+        attempts++;
+        s_stats.sensor_resets++;
+
+        if( hal_sensor_reset() == 0 )
+        {
+            break;
+        }
+
+        backoff_ms = ( backoff_ms * 2 > SENSOR_RESET_BACKOFF_MAX_MS ) ? SENSOR_RESET_BACKOFF_MAX_MS : backoff_ms * 2;
+        LOG( "[camera] sensor reset attempt %lu failed, next in %lu ms", ( unsigned long ) attempts, ( unsigned long ) backoff_ms );
+    }
+
+    s_dma_timeout_streak = 0;
+    LOG( "[camera] sensor recovered after %lu reset(s)", ( unsigned long ) attempts );
+}
+
 /* Capture one frame into a free slot and queue it. Returns when the frame
  * has been queued, dropped, or no slot was available. */
 static void prvCaptureOne( TickType_t * last_motion )
@@ -113,8 +151,24 @@ static void prvCaptureOne( TickType_t * last_motion )
         if( hal_sensor_dma_abort() || !prvWaitForDma( last_motion ) )
         {
             frame_pool_move( idx, BUF_FILLING, BUF_FREE );
+
+            if( ++s_dma_timeout_streak >= SENSOR_LOST_TIMEOUTS )
+            {
+                prvRecoverSensor();
+            }
+
             return;
         }
+    }
+
+    s_dma_timeout_streak = 0;
+
+    /* Integrity: the ISP's CRC must match what landed in RAM. */
+    if( crc32_compute( fb->data, FRAME_BYTES ) != hal_sensor_last_crc() )
+    {
+        s_stats.corrupt_frames++;
+        frame_pool_move( idx, BUF_FILLING, BUF_FREE );
+        return;
     }
 
     fb->seq = hal_sensor_last_seq();

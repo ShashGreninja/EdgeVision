@@ -25,7 +25,8 @@ typedef enum
     BUF_FREE = 0,
     BUF_FILLING,
     BUF_READY,
-    BUF_PROCESSING
+    BUF_PROCESSING,
+    BUF_RESERVED /* Lent to another subsystem (memory pressure); not in rotation. */
 } buf_state_t;
 
 typedef struct
@@ -50,7 +51,13 @@ void frame_pool_move( int idx, buf_state_t from, buf_state_t to );
 
 frame_buf_t * frame_pool_get( int idx );
 
-/* One letter per slot: F(ree) W(riting) R(eady) P(rocessing). out needs FRAME_POOL_SLOTS + 1 bytes. */
+/* Take a free slot out of rotation (FREE -> RESERVED), waiting up to `wait`
+ * ticks. Returns the slot index or -1. Give it back with
+ * frame_pool_move( idx, BUF_RESERVED, BUF_FREE ). */
+int frame_pool_reserve( TickType_t wait );
+
+/* One letter per slot: F(ree) W(riting) R(eady) P(rocessing) X(reserved).
+ * out needs FRAME_POOL_SLOTS + 1 bytes. */
 void frame_pool_snapshot( char * out );
 
 #endif /* FRAME_POOL_H */

@@ -39,4 +39,8 @@ int decision_init( QueueHandle_t decision_queue );
 
 void decision_get_stats( decision_stats_t * out );
 
+/* Raise a "selftest" event through the normal network path (a device's
+ * "send test alert" button). */
+void decision_selftest( void );
+
 #endif /* DECISION_H */

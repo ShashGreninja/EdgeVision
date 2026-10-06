@@ -21,6 +21,9 @@ typedef struct
     uint32_t no_buffer;       /* Times no FREE slot was available to arm DMA.  */
     uint32_t dma_timeouts;    /* DMA did not complete within DMA_TIMEOUT_MS.   */
     uint32_t queue_drops;     /* READY frames dropped because the queue was full. */
+    uint32_t corrupt_frames;  /* Frames whose CRC did not match: dropped.  */
+    uint32_t sensor_lost;     /* Times the sensor stopped responding.      */
+    uint32_t sensor_resets;   /* Sensor power-cycles during recovery.      */
 } camera_stats_t;
 
 /* Create CameraTask, the frame queue and the interrupt handlers.

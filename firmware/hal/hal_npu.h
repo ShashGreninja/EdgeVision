@@ -65,6 +65,9 @@ void hal_npu_get_result( npu_result_t * out );
  * new jobs again. */
 void hal_npu_reset( void );
 
+/* Fault injection: the next job hangs and never completes until a reset. */
+void hal_npu_fault_hang( void );
+
 #ifdef __cplusplus
 }
 #endif

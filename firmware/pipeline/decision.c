@@ -116,6 +116,19 @@ static void prvDecisionTask( void * param )
     }
 }
 
+void decision_selftest( void )
+{
+    event_t ev;
+
+    memset( &ev, 0, sizeof( ev ) );
+    snprintf( ev.name, sizeof( ev.name ), "selftest" );
+    ev.confidence = 1.0f;
+    ev.uptime_ms = ( uint32_t ) ( xTaskGetTickCount() * portTICK_PERIOD_MS );
+    LOG( "[event] {\"event\":\"selftest\",\"confidence\":1.00,\"zone\":\"%s\",\"uptime_ms\":%lu}",
+         DECISION_ZONE, ( unsigned long ) ev.uptime_ms );
+    network_post_event( &ev );
+}
+
 int decision_init( QueueHandle_t decision_queue )
 {
     s_in = decision_queue;

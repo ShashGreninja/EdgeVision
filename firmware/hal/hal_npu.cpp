@@ -42,6 +42,7 @@ std::condition_variable g_cv;
 bool g_busy = false;
 bool g_has_job = false;
 uint32_t g_generation = 0; /* Bumped by every reset; stale jobs are discarded. */
+bool g_hang_next = false;
 uint32_t g_job_seq;
 hal_roi_t g_job_roi;
 npu_result_t g_result;
@@ -232,6 +233,18 @@ void npu_thread()
             seq = g_job_seq;
             roi = g_job_roi;
             generation = g_generation;
+
+            if( g_hang_next )
+            {
+                /* Injected fault: stuck until someone resets the NPU. */
+                g_hang_next = false;
+                std::printf( "[hw] npu: hung on frame %u\n", static_cast<unsigned>( seq ) );
+                std::fflush( stdout );
+                g_cv.wait( lock, [ generation ] { return g_generation != generation; } );
+                std::printf( "[hw] npu: reset, job for frame %u abandoned\n", static_cast<unsigned>( seq ) );
+                std::fflush( stdout );
+                continue;
+            }
         }
 
         const auto start = std::chrono::steady_clock::now();
@@ -330,4 +343,10 @@ extern "C" void hal_npu_reset( void )
     }
 
     g_cv.notify_all();
+}
+
+extern "C" void hal_npu_fault_hang( void )
+{
+    std::lock_guard<std::mutex> lock( g_mu );
+    g_hang_next = true;
 }

@@ -12,6 +12,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include "common/crc32.h"
 #include "common/log.h"
 #include "drivers/frame_pool.h"
 #include "hal/hal_sensor.h"
@@ -148,6 +149,33 @@ static void test_early_release_paths( void )
     prvExpectSnapshot( "FFF" );
 }
 
+static void test_reserve_takes_slot_out_of_rotation( void )
+{
+    const int reserved = frame_pool_reserve( 0 );
+
+    CHECK( reserved >= 0 );
+    CHECK( prvSlotLetter( reserved ) == 'X' );
+
+    /* Only the other two slots can be claimed now. */
+    const int a = frame_pool_claim( 0 );
+    const int b = frame_pool_claim( 0 );
+
+    CHECK( ( a >= 0 ) && ( b >= 0 ) && ( a != reserved ) && ( b != reserved ) );
+    CHECK( frame_pool_claim( 0 ) == -1 );
+
+    frame_pool_move( a, BUF_FILLING, BUF_FREE );
+    frame_pool_move( b, BUF_FILLING, BUF_FREE );
+    frame_pool_move( reserved, BUF_RESERVED, BUF_FREE );
+    prvExpectSnapshot( "FFF" );
+}
+
+static void test_crc32_reference_value( void )
+{
+    /* The standard CRC-32 check value. */
+    CHECK( crc32_compute( ( const uint8_t * ) "123456789", 9 ) == 0xCBF43926u );
+    CHECK( crc32_compute( ( const uint8_t * ) "", 0 ) == 0u );
+}
+
 static volatile int s_release_idx;
 
 static void prvReleaseLater( void * param )
@@ -225,6 +253,8 @@ static void prvTestTask( void * param )
     prvRun( "full ownership cycle", test_full_cycle );
     prvRun( "early release paths", test_early_release_paths );
     prvRun( "claim blocks until release", test_claim_blocks_until_release );
+    prvRun( "reserve takes a slot out", test_reserve_takes_slot_out_of_rotation );
+    prvRun( "crc32 reference value", test_crc32_reference_value );
 
     LOG( "[unit] %d checks, %d failures", s_checks, s_failures );
     exit( ( s_failures == 0 ) ? 0 : 1 );

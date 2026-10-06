@@ -12,6 +12,7 @@ static TickType_t s_last_refill;
 static uint32_t s_admitted;
 static uint32_t s_dropped;
 static char s_history[ GOV_HISTORY_LEN + 1 ];
+static volatile uint32_t s_load_percent = 100;
 
 static void prvPushHistory( char outcome )
 {
@@ -63,6 +64,8 @@ int governor_admit( int force, uint32_t * reserved_us )
 
 void governor_complete( uint32_t reserved_us, uint32_t actual_us, char outcome )
 {
+    actual_us = ( uint32_t ) ( ( uint64_t ) actual_us * s_load_percent / 100u );
+
     taskENTER_CRITICAL();
 
     /* Refund the reservation, charge what the frame really cost. */
@@ -72,6 +75,11 @@ void governor_complete( uint32_t reserved_us, uint32_t actual_us, char outcome )
     s_est_us = ( 3u * s_est_us + actual_us ) / 4u;
     prvPushHistory( outcome );
     taskEXIT_CRITICAL();
+}
+
+void governor_set_load_percent( uint32_t percent )
+{
+    s_load_percent = percent;
 }
 
 void governor_get_stats( governor_stats_t * out )
