@@ -1,0 +1,22 @@
+{
+  "name": "edgevision-cloud",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AWS backend for EdgeVision: IoT rule -> DynamoDB, Lambda + HTTP API for the dashboard",
+  "bin": { "edgevision-cloud": "bin/app.ts" },
+  "scripts": {
+    "build": "tsc",
+    "synth": "cdk synth",
+    "deploy": "cdk deploy"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "aws-cdk": "^2.1000.0",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.6.0"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.200.0",
+    "constructs": "^10.4.0"
+  }
+}
