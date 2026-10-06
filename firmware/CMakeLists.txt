@@ -4,6 +4,10 @@ project(edgevision_firmware C CXX)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
+# Write compile_commands.json so editors (VS Code C/C++, clangd) see the same
+# include paths as the compiler, including the fetched FreeRTOS headers.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 include(FetchContent)
 
 # ---- FreeRTOS kernel (Windows simulator port) --------------------------------

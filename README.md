@@ -96,7 +96,13 @@ Ring device / Playground --HTTPS webhook--> gateway (Python): verify HMAC, dedup
    `object_detection_nanodet_2022nov.onnx` and `object_detection_nanodet_2022nov_int8.onnx`.
 4. **Build.** `.\firmware\build.ps1` (CMake fetches FreeRTOS-Kernel V11.3.1; output
    goes to `%LOCALAPPDATA%\edgevision\build`, outside OneDrive).
-5. **Test clip** (optional, not committed): put an `.mp4` of someone walking to a
+5. **Editor (VS Code).** The build writes `compile_commands.json` to the build
+   folder. Point the C/C++ extension at it, or IntelliSense cannot find the
+   FreeRTOS headers (CMake downloads them into the build folder):
+   `.vscode/c_cpp_properties.json` with
+   `"compileCommands": "${env:LOCALAPPDATA}/edgevision/build/compile_commands.json"`
+   and `"compilerPath": "C:/msys64/ucrt64/bin/gcc.exe"`.
+6. **Test clip** (optional, not committed): put an `.mp4` of someone walking to a
    door in `eval/clips/`. Without one, the sensor shows a synthetic moving block.
 
 ## Run
