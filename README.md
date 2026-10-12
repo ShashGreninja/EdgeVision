@@ -149,9 +149,18 @@ Details and the payload format: [docs/ring-notes.md](docs/ring-notes.md).
 
 ### With AWS
 
-`cloud/aws` deploys the backend with CDK and explains the device certificate:
-see [cloud/aws/README.md](cloud/aws/README.md). Then run the Wi-Fi module against
-the AWS IoT endpoint and open the dashboard with `?api=<EventsApiUrl>`.
+After `aws configure` (credentials and region), one script deploys the CDK stack,
+creates the camera's certificate and records the endpoint; another runs the
+whole system against AWS:
+
+```powershell
+.\scripts\deploy_aws.ps1                                  # default region ap-south-1
+.\scripts\run_demo.ps1 -Aws -Clip eval\clips\testclip.mp4
+.\scripts\destroy_aws.ps1                                 # remove it again
+```
+
+Details: [cloud/aws/README.md](cloud/aws/README.md). The certificate, private key
+and deployment details stay in `certs\`, which is never committed.
 
 ## Tests and evaluation
 

@@ -19,7 +19,13 @@ including the table's data.
 
 ## Deploy
 
-Needs Node.js, the AWS CLI, and credentials for your account (`aws configure`).
+The short way, from the repo root (does everything below):
+
+```powershell
+.\scripts\deploy_aws.ps1 -Region ap-south-1
+```
+
+Step by step: needs Node.js, the AWS CLI, and credentials for your account (`aws configure`).
 
 ```bash
 cd cloud/aws
