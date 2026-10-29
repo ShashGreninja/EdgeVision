@@ -65,9 +65,64 @@ Motion Detection sections) and developer.amazon.com/docs/ring/develop.html.
 Without Ring access, `gateway/send_test_webhook.py` sends a correctly signed
 payload in the same format.
 
-## Still to confirm with a real account
+## Direct Ring API connection
 
-- Whether the Playground's simulated events are delivered to the app's webhook
-  URL, or only shown in the Playground UI.
-- Whether WHEP live view is usable from our own code, which would let the
-  virtual sensor use real Ring frames instead of a local clip.
+`gateway/ring_api.py` calls Ring's official Partner API from Python. It sends
+the required Bearer token, User-Agent and Hardware_Id headers over HTTPS.
+Paste a temporary token from the Ring Developer Playground at the hidden
+prompt; the client keeps it in memory and never saves it. Alternatively,
+provide `RING_ACCESS_TOKEN` through the process environment, not a CLI argument.
+
+```powershell
+# Check access: discover devices and read motion history.
+.venv\Scripts\python gateway\ring_api.py
+
+# With run_demo.ps1 already running, forward new Ring motion to the firmware.
+.venv\Scripts\python gateway\ring_api.py --watch
+
+# Official Playground: use its live-view simulation as a local wake trigger.
+.venv\Scripts\python gateway\ring_api.py --watch --playground
+```
+
+If multiple devices are accessible, select one with `--device <Ring-device-id>`.
+Watch mode polls every five seconds and deliberately skips history present at
+startup. New motion events are deduplicated and forwarded to localhost UDP
+5055, using the same command as the webhook gateway. Ctrl+C stops the client.
+On token expiry, generate a new Playground token and restart the client.
+
+The Playground's Motion/Package/Vehicle buttons create live-view sessions.
+Their history entries have `event_type: on_demand`, not `motion`. Use the
+explicit `--playground` switch for these sessions; they are labeled
+`playground_live_view` when forwarded. Normal watch mode accepts only motion
+events, and does not treat a user opening live view as a motion alert.
+
+This polling path does not require a public tunnel or the app's HMAC signing
+key. The signed webhook receiver remains available for real-time delivery.
+Polling examines the latest history page, so it is a demo integration rather
+than a durable backfill mechanism for large event volumes.
+
+### Validation and limits
+
+On 2026-10-29, authenticated device discovery and motion-history requests
+succeeded against Ring's official API using a temporary Playground token.
+The Python client returned one device named `Playground Device` and a history
+event. Inspecting the Playground response confirmed it was an `on_demand`
+live-view event. Gateway tests also verify HMAC rejection, duplicate suppression,
+and UDP delivery; API-client tests cover authentication headers, credential-safe
+errors, redirect rejection, device-path escaping, and event deduplication.
+
+The complete Playground test also passed: a newly generated Ring live-view
+event was polled by `--watch --playground`, the firmware logged
+`motion pin raised (ring playground_live_view ...)`, and local-clip inference
+produced `person_detected` events with confidence 0.72 and 0.76. The Wi-Fi module
+published both over MQTT/TLS, and the deployed AWS events API returned them.
+This checks Ring event ingestion through to cloud output, with simulated video
+input. All 18 API-client and webhook-gateway tests passed.
+
+This validates the official Ring sandbox, not a physical Ring camera. Video
+inference still uses the local clip: Ring WHEP/RTSPS video is not yet connected
+to the virtual sensor. Delivery from Ring to the public webhook endpoint also
+remains unverified.
+
+Sources: [Ring event history and polling](https://developer.amazon.com/docs/ring/api-documentation.html#event-history),
+[required request headers](https://developer.amazon.com/docs/ring/api-documentation.html#required-http-headers).

@@ -38,7 +38,7 @@ function Start-Component([string]$title, [string]$command) {
     Write-Host "  started $title"
 }
 
-$dashboard = "http://127.0.0.1:8000/"
+$dashboard = "http://127.0.0.1:8000/app.html?mode=live"
 $moduleArgs = ""
 if ($Aws) {
     $deploymentFile = Join-Path $root "certs\aws-deployment.json"
@@ -46,7 +46,7 @@ if ($Aws) {
     $d = Get-Content $deploymentFile -Raw | ConvertFrom-Json
     $moduleArgs = "--broker $($d.endpoint) --port 8883 --client-id $($d.thing) " +
         "--ca certs\AmazonRootCA1.pem --cert certs\device.pem.crt --key certs\private.pem.key"
-    $dashboard = "http://127.0.0.1:8000/?api=$([uri]::EscapeDataString($d.events_api))"
+    $dashboard = "http://127.0.0.1:8000/app.html?mode=live&api=$([uri]::EscapeDataString($d.events_api))"
 }
 
 Write-Host "Starting EdgeVision$(if ($Aws) { ' against AWS' })..." -ForegroundColor Cyan
