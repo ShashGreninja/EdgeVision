@@ -1,5 +1,7 @@
 # EdgeVision
 
+Live deployment: [Landing page](https://p4qja0kut9.execute-api.ap-southeast-2.amazonaws.com/) · [Demo](https://p4qja0kut9.execute-api.ap-southeast-2.amazonaws.com/app.html) · [Guide](https://p4qja0kut9.execute-api.ap-southeast-2.amazonaws.com/guide.html). Hosted in `ap-southeast-2` through API Gateway, Lambda and private S3. Firmware still runs locally.
+
 **A software-defined smart-camera firmware that decides locally what matters and
 sends the cloud an event, not the video.**
 
