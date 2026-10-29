@@ -168,7 +168,7 @@ creates the camera's certificate and records the endpoint; another runs the
 whole system against AWS:
 
 ```powershell
-.\scripts\deploy_aws.ps1                                  # default region ap-south-1
+.\scripts\deploy_aws.ps1 -Profile edgevision               # ap-southeast-2; backend + HTTPS frontend
 .\scripts\run_demo.ps1 -Aws -Clip eval\clips\testclip.mp4
 .\scripts\destroy_aws.ps1                                 # remove it again
 ```

@@ -40,7 +40,7 @@ The four-stage mobile walkthrough is still long, and the engineering view remain
 - Disconnected state disables motion commands. Recorded mode disables simulator and fault commands.
 - The five-page Word guide was exported through Microsoft Word, rendered to images, and visually checked page by page. Web, Word and PDF versions are included.
 
-The frontend is a local preview; this change does not publish a frontend hosting service. Existing AWS backend resources remain in use. A physical Ring camera and Ring live-video input remain unverified; Playground events can wake the local simulator, whose detector reads the local evaluation clip.
+The initial redesign was verified locally. Hosting is now provisioned by the CDK stack: a private S3 bucket behind CloudFront serves the pages, and an uncached `/api/events` behavior reaches the existing AWS backend. Firmware still runs locally. A physical Ring camera and Ring live-video input remain unverified; Playground events can wake the local simulator, whose detector reads the local evaluation clip.
 
 ## Assets and credits
 

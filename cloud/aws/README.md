@@ -13,16 +13,17 @@ The stack (`lib/edgevision-stack.ts`) creates:
 | IoT topic rule | `SELECT *, topic(2) AS device, timestamp() AS received_at ... FROM 'edgevision/+/events'` into DynamoDB |
 | DynamoDB table | Events keyed by `device` + `received_at`, expire after 30 days, on-demand billing |
 | Lambda + HTTP API | `GET /events?device=edge-cam-01&limit=50`, newest first, CORS open for the dashboard |
+| Private S3 bucket + CloudFront | HTTPS landing page, demo, guide and downloads; only CloudFront can read the bucket |
+| CloudFront API behavior | `/api/events` proxies to the existing HTTP API with caching disabled and query parameters preserved |
 
-All of it fits in the AWS free tier at demo volumes. `cdk destroy` removes it,
-including the table's data.
+Storage, requests, transfer and deployment helpers consume AWS usage/credits; do not assume hosting is always free. `cdk destroy` removes the site and backend, including the table's demo data.
 
 ## Deploy
 
 The short way, from the repo root (does everything below):
 
 ```powershell
-.\scripts\deploy_aws.ps1 -Region ap-south-1
+.\scripts\deploy_aws.ps1 -Region ap-southeast-2 -Profile edgevision
 ```
 
 Step by step: needs Node.js, the AWS CLI, and credentials for your account (`aws configure`).
@@ -63,12 +64,14 @@ python netmodule/wifi_module.py --broker <endpoint> --port 8883 \
   --ca certs/AmazonRootCA1.pem --cert certs/device.pem.crt --key certs/private.pem.key
 ```
 
-Dashboard: `http://127.0.0.1:8000/?api=<EventsApiUrl>`. The local cloud stub
-still serves the page; the event list then comes from AWS.
+Open the `FrontendUrl` printed by deployment for the landing page. `app.html` opens recorded playback; `app.html?mode=live#events` reads current cloud events through `/api/events`. `guide.html` contains the project guide and Word/PDF downloads. Firmware and the Wi-Fi emulator still run on your PC. A browser may request local-network permission before the hosted page can reach the simulator; the local dashboard opened by `run_demo.ps1` is also available.
+
+The S3 bucket blocks public access, uses encryption and requires TLS. CloudFront uses Origin Access Control, HTTPS redirection and managed security headers. No Lambda@Edge or cross-Region backend resources are used. The event API remains public and is appropriate for demo metadata only. Deployment invalidates the frontend cache. Use CloudFront request metrics for monitoring; access logs and CloudTrail S3 data events can be enabled for more detailed auditing with additional usage charges.
 
 ## Check the stack without deploying
 
 ```bash
 npx tsc -p .     # type-check
+npm test        # secure hosting and API-cache assertions
 npx cdk synth    # writes cdk.out/EdgeVision.template.json
 ```

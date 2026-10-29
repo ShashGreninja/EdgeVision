@@ -1,7 +1,7 @@
 # Deploy the EdgeVision backend to AWS and give the camera its identity.
 #
 #   aws configure                      (once: your credentials and region)
-#   .\scripts\deploy_aws.ps1           (defaults: ap-south-1, thing edge-cam-01)
+#   .\scripts\deploy_aws.ps1           (defaults: ap-southeast-2, profile edgevision)
 #   .\scripts\run_demo.ps1 -Aws -Clip eval\clips\testclip.mp4
 #
 # Steps: check credentials -> CDK bootstrap (once per account/region) -> CDK
@@ -11,11 +11,13 @@
 # Safe to re-run: existing certificates are reused.
 
 param(
-    [string]$Region = "ap-south-1",
+    [string]$Region = "ap-southeast-2",
+    [string]$Profile = "edgevision",
     [string]$Thing = "edge-cam-01"
 )
 
 $ErrorActionPreference = "Continue"
+$env:AWS_PROFILE = $Profile
 $root = Split-Path $PSScriptRoot -Parent
 $certs = Join-Path $root "certs"
 $aws = "C:\Program Files\Amazon\AWSCLIV2\aws.exe"
@@ -70,12 +72,13 @@ $endpoint = & $aws iot describe-endpoint --region $Region --endpoint-type iot:Da
 
 $deployment = [ordered]@{
     account = $account; region = $Region; thing = $outputs.ThingName; endpoint = $endpoint
-    events_api = $outputs.EventsApiUrl; table = $outputs.TableName; policy = $outputs.PolicyName; certificate_arn = $arn
+    events_api = $outputs.EventsApiUrl; frontend_url = $outputs.FrontendUrl; table = $outputs.TableName; policy = $outputs.PolicyName; certificate_arn = $arn
 }
 [IO.File]::WriteAllText((Join-Path $certs "aws-deployment.json"), ($deployment | ConvertTo-Json), (New-Object Text.UTF8Encoding $false))
 
 Write-Host "`nDeployed." -ForegroundColor Green
 Write-Host "  IoT endpoint : $endpoint"
 Write-Host "  Events API   : $($outputs.EventsApiUrl)"
+Write-Host "  Frontend     : $($outputs.FrontendUrl)"
 Write-Host "  Run it       : .\scripts\run_demo.ps1 -Aws -Clip eval\clips\testclip.mp4"
 Write-Host "  Remove it    : .\scripts\destroy_aws.ps1"
