@@ -1,0 +1,7 @@
+EdgeVision visual assets
+
+Video: visit.mp4 and four frame-*.jpg images are excerpts from eval/clips/testclip.mp4, the existing project evaluation clip. Original author and distribution license are not recorded in this repository; confirm footage rights before publishing externally. These are evaluation scenes, not Ring live-camera footage.
+
+Type: Switzer, from Indian Type Foundry via Fontshare. Font source: https://www.fontshare.com/fonts/switzer . License terms: https://www.fontshare.com/licenses/itf-free-font-license . Files downloaded from Fontshare official CDN.
+
+Recorded data: recorded-run.json is an actual simulator run with matching AWS API responses captured on 29 October 2026. It contains event metadata and no credentials.

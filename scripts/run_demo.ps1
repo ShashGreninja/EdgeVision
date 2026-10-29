@@ -11,7 +11,8 @@
 
 param(
     [string]$Clip = "",
-    [int]$AutoMotion = 0
+    [int]$AutoMotion = 0,
+    [switch]$Aws   # use the AWS deployment from deploy_aws.ps1 instead of local Mosquitto
 )
 
 $ErrorActionPreference = "Continue"
@@ -37,11 +38,25 @@ function Start-Component([string]$title, [string]$command) {
     Write-Host "  started $title"
 }
 
-Write-Host "Starting EdgeVision..." -ForegroundColor Cyan
-Start-Component "MQTT broker" "mosquitto -p 1883 -v"
-Start-Sleep 1
+$dashboard = "http://127.0.0.1:8000/app.html?mode=live"
+$moduleArgs = ""
+if ($Aws) {
+    $deploymentFile = Join-Path $root "certs\aws-deployment.json"
+    if (-not (Test-Path $deploymentFile)) { Write-Host "No AWS deployment: run .\scripts\deploy_aws.ps1 first" -ForegroundColor Red; exit 1 }
+    $d = Get-Content $deploymentFile -Raw | ConvertFrom-Json
+    $moduleArgs = "--broker $($d.endpoint) --port 8883 --client-id $($d.thing) " +
+        "--ca certs\AmazonRootCA1.pem --cert certs\device.pem.crt --key certs\private.pem.key"
+    $dashboard = "http://127.0.0.1:8000/app.html?mode=live&api=$([uri]::EscapeDataString($d.events_api))"
+}
+
+Write-Host "Starting EdgeVision$(if ($Aws) { ' against AWS' })..." -ForegroundColor Cyan
+if (-not $Aws) {
+    Start-Component "MQTT broker" "mosquitto -p 1883 -v"
+    Start-Sleep 1
+}
+# The stub always serves the dashboard page; with -Aws the events come from AWS.
 Start-Component "cloud stub" "& '$python' -u cloud\local\cloud_stub.py"
-Start-Component "Wi-Fi module" "& '$python' -u netmodule\wifi_module.py"
+Start-Component "Wi-Fi module" "& '$python' -u netmodule\wifi_module.py $moduleArgs"
 
 if ($env:RING_HMAC_KEY) {
     Start-Component "Ring gateway" "& '$python' -u gateway\ring_gateway.py"
@@ -56,5 +71,5 @@ if ($AutoMotion -gt 0) { $fwArgs += "--auto-motion $AutoMotion" }
 Start-Component "firmware" "& '$firmware' $($fwArgs -join ' ')"
 
 Start-Sleep 3
-Start-Process "http://127.0.0.1:8000/"
-Write-Host "`nDashboard: http://127.0.0.1:8000/  (press 'Trigger motion', or m in the firmware window)" -ForegroundColor Green
+Start-Process $dashboard
+Write-Host "`nDashboard: $dashboard  (press 'Trigger motion', or m in the firmware window)" -ForegroundColor Green

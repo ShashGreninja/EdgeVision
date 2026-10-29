@@ -147,11 +147,34 @@ set the app's webhook URL to `https://<host>/webhooks/ring`. Without Ring access
 `gateway\send_test_webhook.py` sends a correctly signed motion webhook.
 Details and the payload format: [docs/ring-notes.md](docs/ring-notes.md).
 
+To use Ring's official API without a public webhook tunnel, generate a token
+in the [Ring Developer Playground](https://developer.amazon.com/ring/console/playground)
+and run this alongside the demo:
+
+```powershell
+.venv\Scripts\python gateway\ring_api.py --watch --playground
+```
+
+Paste the token at the hidden prompt. In Playground mode, new simulated
+live-view sessions wake the firmware; existing history is skipped. For actual
+camera motion, omit `--playground`. The token stays in memory. This path has
+been checked against the official Playground API; video processing still uses
+the local clip, not a physical Ring camera's live feed.
+
 ### With AWS
 
-`cloud/aws` deploys the backend with CDK and explains the device certificate:
-see [cloud/aws/README.md](cloud/aws/README.md). Then run the Wi-Fi module against
-the AWS IoT endpoint and open the dashboard with `?api=<EventsApiUrl>`.
+After `aws configure` (credentials and region), one script deploys the CDK stack,
+creates the camera's certificate and records the endpoint; another runs the
+whole system against AWS:
+
+```powershell
+.\scripts\deploy_aws.ps1 -Profile edgevision               # ap-southeast-2; backend + HTTPS frontend
+.\scripts\run_demo.ps1 -Aws -Clip eval\clips\testclip.mp4
+.\scripts\destroy_aws.ps1                                 # remove it again
+```
+
+Details: [cloud/aws/README.md](cloud/aws/README.md). The certificate, private key
+and deployment details stay in `certs\`, which is never committed.
 
 ## Tests and evaluation
 
@@ -173,8 +196,9 @@ every test run is kept in `%LOCALAPPDATA%\edgevision\build\test-logs`.
 - One labelled clip so far: the evaluation shows the system works end to end;
   it is not a general recall figure for the detector. The camera stayed awake
   for the whole visit in 4 of 6 runs; it can lose a person who turns away.
-- The AWS stack is written and synthesizes, but has not been deployed from this
-  repository yet.
+- The AWS backend is deployed and its MQTT-to-events-API path is verified.
+  Ring integration is verified against the official Playground; physical-camera
+  webhooks and Ring live-video input remain unverified.
 - The firmware runs on the FreeRTOS Windows port, which is not real-time;
   timings are representative, not cycle-accurate.
 
@@ -187,3 +211,18 @@ every test run is kept in `%LOCALAPPDATA%\edgevision\build\test-logs`.
 - [x] Day 4: watchdog, fault injection with recovery, JSON telemetry, dashboard
 - [x] Day 5: functional tests, evaluation, documentation
 - [ ] Deploy the AWS stack and connect a real Ring webhook
+
+## Application guide
+
+The frontend now starts with an introduction at `/`, with the workspace at
+`/app.html`. The launcher opens the live workspace directly. Recorded visit
+replays genuine captured telemetry and matching AWS responses without a local
+simulator. Live simulator controls the running firmware. Events contains filters
+and payload inspection; Engineering contains processing details and recovery
+controls. API, module, and selected-mode context survive navigation.
+
+Read the [complete project guide](docs/edgevision-guide.md), download the
+[Word guide](docs/EdgeVision-guide.docx) or [PDF guide](docs/EdgeVision-guide.pdf),
+or open `/guide.html` in the local frontend.
+
+Frontend state checks: `node --test tests/flow.test.cjs`.

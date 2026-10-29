@@ -25,7 +25,9 @@ __pycache__/
 # Node
 node_modules/
 cdk.out/
+cdk-outputs.json
 dist/
+.taste-skill/
 
 # Editors
 .vscode/
